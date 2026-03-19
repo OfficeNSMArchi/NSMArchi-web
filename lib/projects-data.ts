@@ -23,8 +23,8 @@ export const projects: Project[] = [
   // NDB Projects
   {
     id: "ndb-tower",
-    title: "NDB Innovation Tower",
-    titleKo: "NDB 이노베이션 타워",
+    title: "Innovation Tower",
+    titleKo: "이노베이션 타워",
     location: "Seoul, Korea",
     locationKo: "서울, 한국",
     year: "2024",

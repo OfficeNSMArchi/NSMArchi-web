@@ -2,12 +2,10 @@
 
 import { useState } from "react"
 import { ProjectCard } from "@/components/project-card"
-import { ProjectSliderModal } from "@/components/ProjectSliderModal"
+import { ProjectModal } from "@/components/project-modal"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { projects, type Project } from "@/lib/projects-data"
-
-
 
 // NSM 메인에는 대표 프로젝트 (featured) 와 공동 프로젝트 (joint) 표시
 const featuredProjects = projects.filter(
@@ -42,24 +40,12 @@ export default function HomePage() {
 
       <SiteFooter />
 
-      {/* Project Modal
+      {/* Project Modal */}
       <ProjectModal
         project={selectedProject}
         open={!!selectedProject}
         onClose={() => setSelectedProject(null)}
       />
-      
-      */}
-      
- 
-      {/* 기존 ProjectModal을 주석 처리하거나 지우고 아래 내용 삽입 */}
- 
-      <ProjectSliderModal 
-      project={selectedProject} // 이제 'projects'가 아니라 'project' 하나만 보냅니다.
-      open={!!selectedProject} 
-      onClose={() => setSelectedProject(null)} 
-      />
-      
     </div>
   )
 }
