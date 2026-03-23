@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/language-context"
 import { NDBModal } from "@/components/ndb-modal"
 
 const navItems = [
-  { href: "/ndb", label: "NDB", external: false, opensModal: true },
+  { href: "/ndb", label: "NDB", external: false, opensModal : false },
   {
     href: "http://snparchitecture.com/",
     label: "SNP",
