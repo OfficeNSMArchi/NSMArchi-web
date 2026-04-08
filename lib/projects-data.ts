@@ -97,16 +97,16 @@ export const projects: Project[] = [
     area: "7,844 m²",
     use: "Museum / Gallery",
     useKo: "주거복합",
-    image: "http://snparchitecture.com/wp-content/uploads/2020/07/iamge01.jpg",
+    image: "/projects/banpo/01-exterior.png",
     images: [
-      "http://snparchitecture.com/wp-content/uploads/2020/07/iamge01.jpg",
-      "http://snparchitecture.com/wp-content/uploads/2020/07/image02-1.jpg",
-      "http://snparchitecture.com/wp-content/uploads/2024/07/image06.jpg"
+      "/projects/banpo/01-exterior.png",
+      "/projects/banpo/02-interior.png",
+      "/projects/banpo/03-aerial.png"
     ],
     content: [
       {
         type: "image",
-        src: "http://snparchitecture.com/wp-content/uploads/2020/07/iamge01.jpg",
+        src: "/projects/banpo/01-exterior.png",
         alt: "Exterior",
       },
       {
@@ -119,8 +119,8 @@ export const projects: Project[] = [
       },
       {
         type: "image",
-        src: "http://snparchitecture.com/wp-content/uploads/2020/07/image02-1.jpg",
-        alt: "Detail",
+        src: "/projects/banpo/02-interior.png",
+        alt: "Interior",
       },
       {
         type: "text",
@@ -132,8 +132,8 @@ export const projects: Project[] = [
       },
       {
         type: "image",
-        src: "http://snparchitecture.com/wp-content/uploads/2024/07/image06.jpg",
-        alt: "Interior",
+        src: "/projects/banpo/03-aerial.png",
+        alt: "Aerial",
       },
       {
         type: "text",
