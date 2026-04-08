@@ -15,6 +15,7 @@ const navItems = [
     external: true,
   },
   { href: "/metalogic", label: "META LOGIC", external: false, opensModal: false },
+  { href: "/about", label: "ABOUT US", external: false, opensModal: false },
 ]
 
 export function SiteHeader() {
