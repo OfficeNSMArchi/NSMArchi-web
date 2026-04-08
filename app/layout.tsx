@@ -4,6 +4,11 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { LanguageProvider } from '@/lib/language-context' 
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+}
+
 const geistSans = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
