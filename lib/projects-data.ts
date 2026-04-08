@@ -110,6 +110,11 @@ export const projects: Project[] = [
         alt: "Exterior",
       },
       {
+        type: "image",
+        src: "/projects/banpo/01b-facade.png",
+        alt: "Facade",
+      },
+      {
         type: "text",
         title: { ko: "임대 주거의 새로운 전형(Typology) 탐구.", en: "Bach House" },
         body: {

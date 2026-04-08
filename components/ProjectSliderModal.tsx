@@ -325,7 +325,7 @@ export function ProjectSliderModal({ project, open, onClose }: any) {
               <div key={`img-${index}`} className="flex-none h-full border-r border-zinc-100 dark:border-zinc-800">
                 <img
                   src={slide.src}
-                  className="h-full w-auto object-cover min-w-[30vw] select-none"
+                  className="h-full w-auto object-contain select-none"
                   alt={slide.alt ?? "image"}
                 />
               </div>
