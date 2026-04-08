@@ -33,7 +33,7 @@ export function NDBModal({ open, onClose }: NDBModalProps) {
   const { t } = useLanguage()
 
   const ndbProjects = useMemo(
-    () => projects.filter((p) => p.company === "ndb"),
+    () => projects.filter((p) => p.companies.includes("ndb")),
     [],
   )
   const company = companies.ndb

@@ -9,7 +9,7 @@ import { projects, type Project } from "@/lib/projects-data"
 
 // NSM 메인에는 대표 프로젝트 (featured) 와 공동 프로젝트 (joint) 표시
 const featuredProjects = projects.filter(
-  (p) => p.featured || p.company === "joint"
+  (p) => p.featured || p.companies.length > 1
 )
 
 export default function HomePage() {

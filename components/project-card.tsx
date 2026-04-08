@@ -26,12 +26,15 @@ const companyBadge: Record<string, string> = {
   ndb: "N",
   snp: "S",
   metalogic: "M",
-  joint: "NSM",
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
   if (!project) return null
   const { language, t } = useLanguage()
+  const companyLabel = project.companies
+    .map((c) => companyBadge[c])
+    .filter(Boolean)
+    .join("")
 
   return (
     <button
@@ -60,7 +63,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
 
         {/* Company Badge */}
         <span className="absolute right-4 top-4 rounded bg-background/90 px-2 py-1 text-xs font-bold tracking-wider text-foreground backdrop-blur-sm">
-          {companyBadge[project.company]}
+          {companyLabel}
         </span>
 
         {/* Hover Info */}

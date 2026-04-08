@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/site-footer"
 import { projects, companies, type Project } from "@/lib/projects-data"
 import { useLanguage } from "@/lib/language-context"
 
-const metalogicProjects = projects.filter((p) => p.company === "metalogic")
+const metalogicProjects = projects.filter((p) => p.companies.includes("metalogic"))
 const company = companies.metalogic
 
 export default function MetaLogicPage() {

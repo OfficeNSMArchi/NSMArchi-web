@@ -9,10 +9,8 @@ import { projects, type Project } from "@/lib/projects-data"
 
 
 
-// NSM 메인에는 대표 프로젝트 (featured) 와 공동 프로젝트 (joint) 표시
-const featuredProjects = projects.filter(
-  (p) => p.featured || p.company === "joint"
-)
+// 홈 메인 노출은 데이터에서 직접 지정
+const featuredProjects = projects.filter((p) => p.showOnHome)
 
 export default function HomePage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)

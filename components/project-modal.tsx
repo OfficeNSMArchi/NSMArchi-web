@@ -36,8 +36,7 @@ const companyLabels = {
   ndb: "NDB",
   snp: "SNP",
   metalogic: "META LOGIC",
-  joint: "N/S/M Joint",
-}
+} as const
 
 export function ProjectModal({ project, open, onClose }: ProjectModalProps) {
   if (!project) return null
@@ -87,7 +86,7 @@ export function ProjectModal({ project, open, onClose }: ProjectModalProps) {
           {/* Title Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
             <p className="text-sm font-medium uppercase tracking-wider text-foreground/70">
-              {companyLabels[project.company]}
+              {project.companies.map((c) => companyLabels[c]).join(" / ")}
             </p>
             <h2 className="mt-2 text-3xl font-bold text-foreground md:text-4xl">
               {t(project.titleKo, project.title)}
