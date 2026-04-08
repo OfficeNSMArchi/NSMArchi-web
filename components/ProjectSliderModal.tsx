@@ -157,7 +157,7 @@ export function ProjectSliderModal({ project, open, onClose }: any) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent 
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 !max-w-none w-[80vw] h-[50vh] p-0 bg-white dark:bg-zinc-950 border-none outline-none shadow-2xl overflow-hidden z-50"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 !max-w-none w-[92vw] md:w-[80vw] h-[80vh] md:h-[50vh] p-0 bg-white dark:bg-zinc-950 border-none outline-none shadow-2xl overflow-hidden z-50"
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
 
@@ -182,7 +182,7 @@ export function ProjectSliderModal({ project, open, onClose }: any) {
         {/* 좌측 화살표 (아이콘만 남김) */}
         <button 
           onClick={() => scroll('left')} 
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-40 text-white transition-all hover:scale-110 active:scale-95"
+          className="absolute left-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white transition-all hover:scale-110 active:scale-95"
           style={{ filter: 'drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.8))' }} // 검은 사진 위에서도 보이게 은은한 그림자
         >
           <ChevronLeft className="h-10 w-10 stroke-[2.5]" /> {/* 크기와 두께를 약간 키움 */}
@@ -191,16 +191,73 @@ export function ProjectSliderModal({ project, open, onClose }: any) {
         {/* 우측 화살표 (아이콘만 남김) */}
         <button 
           onClick={() => scroll('right')} 
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-40 text-white transition-all hover:scale-110 active:scale-95"
+          className="absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white transition-all hover:scale-110 active:scale-95"
           style={{ filter: 'drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.8))' }} // 은은한 그림자
         >
           <ChevronRight className="h-10 w-10 stroke-[2.5]" /> {/* 크기와 두께를 약간 키움 */}
         </button>
 
+        {/* Mobile: vertical swipe (scroll snap) */}
+        <div className="h-full md:hidden overflow-y-auto snap-y snap-mandatory">
+          {slides.map((slide: any, index: number) => {
+            if (slide.type === "text") {
+              const slideTitle = slide.title ? t(slide.title.ko, slide.title.en) : undefined
+              const slideBody = t(slide.body.ko, slide.body.en)
+              const isFirstText = index === firstTextIndex
+              return (
+                <section
+                  key={`m-text-${index}`}
+                  className="snap-start flex h-full w-full flex-col overflow-y-auto bg-white p-8 text-left dark:bg-zinc-950"
+                >
+                  {index === firstTextIndex ? (
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                      {companyLabel}
+                    </p>
+                  ) : null}
+
+                  {isFirstText ? (
+                    <h2 className="mt-4 text-3xl font-black tracking-tighter leading-tight text-foreground">
+                      {title}
+                    </h2>
+                  ) : null}
+
+                  {slideTitle ? (
+                    <h3
+                      className={[
+                        "font-semibold tracking-tight text-foreground/90",
+                        isFirstText ? "mt-4 text-base" : "mt-2 text-lg",
+                      ].join(" ")}
+                    >
+                      {slideTitle}
+                    </h3>
+                  ) : null}
+
+                  <p className="mt-5 whitespace-pre-wrap text-[15px] font-light leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {slideBody}
+                  </p>
+                </section>
+              )
+            }
+
+            return (
+              <section
+                key={`m-img-${index}`}
+                className="snap-start flex h-full w-full items-center justify-center bg-white dark:bg-black"
+              >
+                <img
+                  src={slide.src}
+                  alt={slide.alt ?? "image"}
+                  className="h-full w-auto object-contain"
+                />
+              </section>
+            )
+          })}
+        </div>
+
         <div 
           ref={scrollRef}
           onWheelCapture={handleWheelCapture}
-          className="flex flex-row flex-nowrap h-full overflow-x-auto overflow-y-hidden no-scrollbar"
+          className="hidden md:flex flex-row flex-nowrap h-full overflow-x-auto overflow-y-hidden no-scrollbar"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {slides.map((slide: any, index: number) => {
@@ -214,7 +271,7 @@ export function ProjectSliderModal({ project, open, onClose }: any) {
                   data-slide="text"
                   className="relative flex-none h-full w-[500px] min-h-0 overflow-hidden bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800"
                 >
-                  <div className="pointer-events-auto absolute right-4 top-4 bottom-4 z-10 flex flex-col justify-between">
+                  <div className="pointer-events-auto absolute right-4 top-4 bottom-4 z-10 hidden md:flex flex-col justify-between">
                     <button
                       type="button"
                       aria-label="Scroll text up"
