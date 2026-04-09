@@ -8,7 +8,10 @@ import { SiteFooter } from "@/components/site-footer"
 import { projects, companies, type Project } from "@/lib/projects-data"
 import { useLanguage } from "@/lib/language-context"
 
-const metalogicProjects = projects.filter((p) => p.companies.includes("metalogic"))
+const hiddenOnMetaLogicPage = new Set<string>(["ml-factory", "nsm-resort"])
+const metalogicProjects = projects.filter(
+  (p) => p.companies.includes("metalogic") && !hiddenOnMetaLogicPage.has(p.id),
+)
 const company = companies.metalogic
 
 export default function MetaLogicPage() {
@@ -25,43 +28,12 @@ export default function MetaLogicPage() {
           <div className="mx-auto max-w-7xl px-6">
             <div className="grid gap-12 md:grid-cols-2 md:items-center">
               <div>
-                <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {t("N/S/M 파트너", "N/S/M Partner")}
-                </p>
                 <h1 className="mt-4 text-5xl font-bold tracking-tight text-foreground md:text-7xl">
                   META LOGIC
                 </h1>
-                <p className="mt-2 text-xl text-muted-foreground">
-                  {company.fullName}
-                </p>
                 <p className="mt-6 text-lg text-muted-foreground">
                   {t(company.description, company.descriptionEn)}
                 </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <p className="text-sm text-muted-foreground">설립</p>
-                  <p className="mt-2 text-2xl font-bold text-foreground">{company.founded}</p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <p className="text-sm text-muted-foreground">위치</p>
-                  <p className="mt-2 text-2xl font-bold text-foreground">{company.location.split(",")[0]}</p>
-                </div>
-                <div className="col-span-2 rounded-xl border border-border bg-card p-6">
-                  <p className="text-sm text-muted-foreground">
-                    {t("전문 분야", "Expertise")}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {company.expertise.map((exp) => (
-                      <span
-                        key={exp}
-                        className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background"
-                      >
-                        {exp}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>

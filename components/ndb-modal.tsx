@@ -51,7 +51,7 @@ export function NDBModal({ open, onClose }: NDBModalProps) {
             <div className="grid gap-12 md:grid-cols-2 md:items-center">
               <div>
                 <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-                  {t("N/S/M 파트너", "N/S/M Partner")}
+                  {t("N+S+M 파트너", "N+S+M Partner")}
                 </p>
                 <h1 className="mt-4 text-5xl font-bold tracking-tight text-foreground md:text-7xl">
                   {company.name}

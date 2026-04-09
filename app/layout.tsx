@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'N/S/M | Architecture & Design Collaborative',
+  title: 'N+S+M | Architecture & Design Collaborative',
   description: 'NDB × SNP × META LOGIC | Architectural Joint Practice',
   generator: 'v0.app',
   icons: {

@@ -10,7 +10,14 @@ import { projects, type Project } from "@/lib/projects-data"
 
 
 // 홈 메인 노출은 데이터에서 직접 지정
-const featuredProjects = projects.filter((p) => p.showOnHome)
+const featuredProjects = projects
+  .filter((p) => p.showOnHome)
+  .sort((a, b) => {
+    const aIsResearch = a.category === "research"
+    const bIsResearch = b.category === "research"
+    if (aIsResearch !== bIsResearch) return aIsResearch ? 1 : -1 // design 먼저
+    return Number(b.year) - Number(a.year) // 같은 카테고리면 최신 연도 우선
+  })
 
 export default function HomePage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)

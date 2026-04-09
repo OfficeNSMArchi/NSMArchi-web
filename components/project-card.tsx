@@ -10,18 +10,6 @@ interface ProjectCardProps {
   onClick: () => void
 }
 
-const statusLabels = {
-  completed: "완료",
-  "in-progress": "진행중",
-  planning: "계획",
-}
-
-const statusColors = {
-  completed: "bg-emerald-500/90 text-white",
-  "in-progress": "bg-amber-500/90 text-white",
-  planning: "bg-muted text-muted-foreground",
-}
-
 const companyBadge: Record<string, string> = {
   ndb: "N",
   snp: "S",
@@ -51,16 +39,6 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-foreground/0 transition-colors duration-300 group-hover:bg-foreground/40" />
         
-        {/* Status Badge */}
-        <Badge
-          className={cn(
-            "absolute left-4 top-4 text-xs font-medium",
-            statusColors[project.status]
-          )}
-        >
-          {statusLabels[project.status]}
-        </Badge>
-
         {/* Company Badge */}
         <span className="absolute right-4 top-4 rounded bg-background/90 px-2 py-1 text-xs font-bold tracking-wider text-foreground backdrop-blur-sm">
           {companyLabel}

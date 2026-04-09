@@ -8,13 +8,13 @@ import { useLanguage } from "@/lib/language-context"
 import { NDBModal } from "@/components/ndb-modal"
 
 const navItems = [
-  { href: "/ndb", label: "NDB", external: false, opensModal : false },
+  { href: "/ndb", label: "nDB", external: false, opensModal : false },
   {
     href: "http://snparchitecture.com/",
     label: "SNP",
     external: true,
   },
-  { href: "/metalogic", label: "META LOGIC", external: false, opensModal: false },
+  { href: "/metalogic", label: "+META LOGIC", external: false, opensModal: false },
   { href: "/about", label: "ABOUT US", external: false, opensModal: false },
 ]
 
@@ -26,10 +26,11 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="text-xl font-bold tracking-tight text-foreground">
-          N/S/M
-        </Link>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-10">
+          <Link href="/" className="text-xl font-bold tracking-tight text-foreground">
+            N+S+M
+          </Link>
+
           <nav className="flex items-center gap-8">
             {navItems.map((item) =>
               item.external ? (
@@ -77,33 +78,33 @@ export function SiteHeader() {
               ),
             )}
           </nav>
-          
-          {/* Language Toggle */}
-          <div className="flex items-center gap-1 border-l border-border pl-6">
-            <button
-              onClick={() => setLanguage("ko")}
-              className={cn(
-                "px-2 py-1 text-xs font-medium transition-colors",
-                language === "ko"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              KOR
-            </button>
-            <span className="text-muted-foreground">/</span>
-            <button
-              onClick={() => setLanguage("en")}
-              className={cn(
-                "px-2 py-1 text-xs font-medium transition-colors",
-                language === "en"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              ENG
-            </button>
-          </div>
+        </div>
+
+        {/* Language Toggle */}
+        <div className="flex items-center gap-1 border-l border-border pl-6">
+          <button
+            onClick={() => setLanguage("ko")}
+            className={cn(
+              "px-2 py-1 text-xs font-medium transition-colors",
+              language === "ko"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            KOR
+          </button>
+          <span className="text-muted-foreground">/</span>
+          <button
+            onClick={() => setLanguage("en")}
+            className={cn(
+              "px-2 py-1 text-xs font-medium transition-colors",
+              language === "en"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            ENG
+          </button>
         </div>
       </div>
       <NDBModal open={ndbOpen} onClose={() => setNdbOpen(false)} />
