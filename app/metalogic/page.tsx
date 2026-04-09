@@ -28,8 +28,12 @@ export default function MetaLogicPage() {
           <div className="mx-auto max-w-7xl px-6">
             <div className="grid gap-12 md:grid-cols-2 md:items-center">
               <div>
-                <h1 className="mt-4 text-5xl font-bold tracking-tight text-foreground md:text-7xl">
-                  META LOGIC
+                <h1 className="mt-4">
+                  <img
+                    src="/branding/metalogic-title.svg"
+                    alt="META LOGIC"
+                    className="h-auto w-full max-w-[900px] md:max-w-[1100px]"
+                  />
                 </h1>
                 <p className="mt-6 text-lg text-muted-foreground">
                   {t(company.description, company.descriptionEn)}

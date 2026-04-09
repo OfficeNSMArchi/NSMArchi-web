@@ -27,7 +27,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group relative block w-full overflow-hidden bg-muted text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+      className="group relative flex h-full w-full flex-col overflow-hidden bg-muted text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -61,10 +61,10 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       </div>
 
       {/* Info below image */}
-      <div className="p-4">
+      <div className="flex h-24 flex-col justify-between p-4">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="font-semibold text-foreground group-hover:underline">
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 font-semibold leading-snug text-foreground group-hover:underline">
               {t(project.titleKo, project.title)}
             </h3>
 
@@ -74,9 +74,11 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </span>
         </div>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{project.area}</span>
+          <span className="shrink-0">{project.area}</span>
           <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-          <span>{language === "ko" ? project.useKo : project.use}</span>
+          <span className="min-w-0 flex-1 truncate">
+            {language === "ko" ? project.useKo : project.use}
+          </span>
         </div>
       </div>
     </button>
