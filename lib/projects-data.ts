@@ -21,6 +21,7 @@ export interface Project {
     | { type: "text"; title?: { ko: string; en: string }; body: { ko: string; en: string } }
   >
   companies: Array<"ndb" | "snp" | "metalogic">
+  metalogicCategory?: "practice" | "concept" | "research" | "academic"
   featured?: boolean
   showOnHome?: boolean
 }
@@ -213,6 +214,7 @@ export const projects: Project[] = [
     description: "To be updated",
     descriptionKo: "To be updated",
     companies: ["metalogic"],
+    metalogicCategory: "practice",
     featured: true,
     showOnHome: true,
   },
@@ -233,6 +235,7 @@ export const projects: Project[] = [
     description: "To be updated",
     descriptionKo: "To be updated",
     companies: ["metalogic"],
+    metalogicCategory: "practice",
     showOnHome: true,
   },
   {
@@ -252,6 +255,129 @@ export const projects: Project[] = [
     description: "To be updated",
     descriptionKo: "To be updated",
     companies: ["metalogic"],
+    metalogicCategory: "practice",
+  },
+  {
+    id: "ml-hknu-fundamental-design",
+    title: "HKNU FUNDAMENTAL DESIGN",
+    titleKo: "HKNU FUNDAMENTAL DESIGN",
+    location: "Anseong, Korea",
+    locationKo: "안성, 한국",
+    year: "2026",
+    status: "in-progress",
+    client: "Hankyong National University",
+    clientKo: "한경국립대학교",
+    area: "-",
+    use: "Academic",
+    useKo: "교육",
+    image:
+      "/projects/HKNU-FUNDESIGN/COVER.jpg",
+      content: [
+        {
+          type: "image",
+          src: "/projects/HKNU-FUNDESIGN/F1.jpg",
+          alt: "Exterior",
+        },
+        {
+          type: "image",
+          src: "/projects/HKNU-FUNDESIGN/F2.jpg",
+          alt: "Facade",
+        },
+        {
+          type: "text",
+          title: { ko: "-", en: "-" },
+          body: {
+            ko: "----",
+            en: "----",
+          },
+        },
+        {
+          type: "image",
+          src: "/projects/HKNU-FUNDESIGN/F3.jpg",
+          alt: "Interior",
+        },
+        {
+          type: "text",
+          title: { ko: "---", en: "---" },
+          body: {
+            ko: "--------",
+            en: "-------",
+          },
+        },
+        {
+          type: "text",
+          title: { ko: "------", en: "------" },
+          body: {
+            ko: "----------",
+            en: "----------",
+          },
+        },
+      ],
+    description: "To be updated",
+    descriptionKo: "To be updated",
+    companies: ["metalogic"],
+    metalogicCategory: "academic",
+  },
+  {
+    id: "ml-hknu-pavilion",
+    title: "HKNU PAVILLION",
+    titleKo: "HKNU PAVILLION",
+    location: "Anseong, Korea",
+    locationKo: "안성, 한국",
+    year: "2026",
+    status: "planning",
+    client: "Hankyong National University",
+    clientKo: "한경국립대학교",
+    area: "-",
+    use: "Academic",
+    useKo: "교육",
+    image:
+      "/projects/HKNU-PAVILLION/COVER.jpg",
+    content: [
+        {
+          type: "image",
+          src: "/projects/HKNU-PAVILLION/F1.jpg",
+          alt: "Exterior",
+        },
+        {
+          type: "image",
+          src: "/projects/HKNU-PAVILLION/F2.jpg",
+          alt: "Facade",
+        },
+        {
+          type: "text",
+          title: { ko: "-", en: "-" },
+          body: {
+            ko: "----",
+            en: "----",
+          },
+        },
+        {
+          type: "image",
+          src: "/projects/HKNU-PAVILLION/F3.jpg",
+          alt: "Interior",
+        },
+        {
+          type: "text",
+          title: { ko: "---", en: "---" },
+          body: {
+            ko: "--------",
+            en: "-------",
+          },
+        },
+        {
+          type: "text",
+          title: { ko: "------", en: "------" },
+          body: {
+            ko: "----------",
+            en: "----------",
+          },
+        },
+      ],
+    description: "To be updated",
+    descriptionKo: "To be updated",
+    companies: ["metalogic"],
+    metalogicCategory: "academic",
   },
 
   // Joint Projects (NSM)
@@ -292,6 +418,7 @@ export const projects: Project[] = [
     description: "To be updated",
     descriptionKo: "To be updated",
     companies: ["ndb", "snp", "metalogic"],
+    metalogicCategory: "practice",
     featured: true,
     showOnHome: true,
   },
@@ -312,6 +439,7 @@ export const projects: Project[] = [
     description: "To be updated",
     descriptionKo: "To be updated",
     companies: ["ndb", "snp", "metalogic"],
+    metalogicCategory: "practice",
   },
 ]
 
