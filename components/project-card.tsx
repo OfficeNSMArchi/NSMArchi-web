@@ -1,14 +1,10 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import type { Project } from "@/lib/projects-data"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { Project } from "@/types/project"
 import { useLanguage } from "@/lib/language-context"
-
-interface ProjectCardProps {
-  project: Project
-  onClick: () => void
-}
+import { usePathname } from "next/navigation"
 
 const companyBadge: Record<string, string> = {
   ndb: "N",
@@ -16,71 +12,47 @@ const companyBadge: Record<string, string> = {
   metalogic: "M",
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
-  if (!project) return null
-  const { language, t } = useLanguage()
+export function ProjectCard({ project }: { project: Project }) {
+  const { t } = useLanguage()
+  const pathname = usePathname()
+  const isSelected = pathname === `/projects/${project.id}`
+
   const companyLabel = project.companies
     .map((c) => companyBadge[c])
     .filter(Boolean)
     .join("")
 
   return (
-    <button
-      onClick={onClick}
-      className="group relative flex h-full w-full flex-col overflow-hidden bg-muted text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+    <Link
+      href={`/projects/${project.id}`}
+      scroll={false}
+      className="group relative flex h-full w-full flex-col overflow-hidden bg-muted"
     >
-      {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
+        <motion.img
+          // 들어올 때는 비행기 효과를 위해 layoutId를 유지합니다.
+          layoutId={`image-${project.id}`}
           src={project.image}
           alt={t(project.titleKo, project.title)}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="h-full w-full object-cover" 
+          initial={false}
+          animate={{ opacity: isSelected ? 0 : 1 }}
+          // [수정] 나갈 때(isSelected가 false가 될 때) 0.8초 동안 서서히 나타나게 합니다.
+          transition={{ duration: 0.8, ease: "easeInOut" }} 
+          style={{ opacity: isSelected ? 0 : 1 }}
         />
-        {/* Overlay on hover */}
         <div className="absolute inset-0 bg-foreground/0 transition-colors duration-300 group-hover:bg-foreground/40" />
-        
-        {/* Company Badge */}
-        <span className="absolute right-4 top-4 rounded bg-background/90 px-2 py-1 text-xs font-bold tracking-wider text-foreground backdrop-blur-sm">
+
+        {/* Company Badge (hover 시에만 노출) */}
+        <span className="absolute right-4 top-4 text-xs font-bold tracking-wider text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           {companyLabel}
         </span>
 
-        {/* Hover Info */}
-        <div className="absolute inset-0 flex flex-col justify-end p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="text-white">
-            <p className="text-sm font-medium uppercase tracking-wider opacity-80">
-              {t(project.locationKo, project.location)}
-            </p>
-            <h3 className="mt-1 text-2xl font-bold">
-              {t(project.titleKo, project.title)}
-            </h3>
-            <p className="mt-2 text-sm opacity-80">
-              {project.area} · {language === "ko" ? project.useKo : project.use}
-            </p>
-          </div>
-        </div>
+        {/* Hover Title (좌상단) */}
+        <h3 className="absolute left-4 top-4 text-sm font-bold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          {t(project.titleKo, project.title)}
+        </h3>
       </div>
-
-      {/* Info below image */}
-      <div className="flex h-24 flex-col justify-between p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 font-semibold leading-snug text-foreground group-hover:underline">
-              {t(project.titleKo, project.title)}
-            </h3>
-
-          </div>
-          <span className="shrink-0 text-sm text-muted-foreground">
-            {project.year}
-          </span>
-        </div>
-        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="shrink-0">{project.area}</span>
-          <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-          <span className="min-w-0 flex-1 truncate">
-            {language === "ko" ? project.useKo : project.use}
-          </span>
-        </div>
-      </div>
-    </button>
+    </Link>
   )
 }

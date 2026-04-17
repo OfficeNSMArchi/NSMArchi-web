@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { ProjectCard } from "@/components/project-card"
-import { ProjectSliderModal } from "@/components/ProjectSliderModal"
 import { MetalogicHeader } from "@/components/metalogic-header"
 import { useMetalogicCategory } from "@/components/metalogic-category-provider"
 import { SiteFooter } from "@/components/site-footer"
-import { projects, type Project } from "@/lib/projects-data"
+import { projects } from "@/lib/projects-data"
 
 const hiddenOnMetaLogicPage = new Set<string>(["ml-factory", "nsm-resort"])
 const metalogicProjects = projects.filter(
@@ -14,7 +12,6 @@ const metalogicProjects = projects.filter(
 )
 
 export default function MetaLogicPage() {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const { selectedCategory } = useMetalogicCategory()
   const filteredProjects = metalogicProjects.filter(
     (project) => project.metalogicCategory === selectedCategory,
@@ -33,7 +30,6 @@ export default function MetaLogicPage() {
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onClick={() => setSelectedProject(project)}
                 />
               ))}
             </div>
@@ -47,12 +43,6 @@ export default function MetaLogicPage() {
       </main>
 
       <SiteFooter />
-
-      <ProjectSliderModal
-        project={selectedProject}
-        open={!!selectedProject}
-        onClose={() => setSelectedProject(null)}
-      />
     </div>
   )
 }

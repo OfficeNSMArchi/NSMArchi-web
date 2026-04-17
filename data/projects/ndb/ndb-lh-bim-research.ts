@@ -1,0 +1,26 @@
+import { Project } from '@/types/project';
+import { getImgPath } from '@/lib/utils';
+
+const ID = "ndb-lh-bim-research";
+
+export const ndbLhBimResearch: Project = {
+  id: ID,
+  title: "LH BIM Cloud User Manual Research",
+  titleKo: "LH BIM 클라우드 사용 매뉴얼 연구",
+  category: "research",
+  location: "Seoul, Korea",
+  locationKo: "서울, 한국",
+  year: "2025",
+  status: "completed",
+  client: "NDB Corporation",
+  clientKo: "NDB 주식회사",
+  area: "-",
+  use: "-",
+  useKo: "-",
+  image: getImgPath(ID, "cover.png"),
+  description: "To be updated",
+  descriptionKo: "To be updated",
+  companies: ["ndb"],
+  featured: true,
+  showOnHome: true,
+};

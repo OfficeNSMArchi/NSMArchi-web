@@ -2,25 +2,22 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/language-context"
-import { NDBModal } from "@/components/ndb-modal"
 
 const navItems = [
-  { href: "/ndb", label: "nDB", external: false, opensModal : false },
+  { href: "/ndb", label: "nDB", external: false },
   {
     href: "http://snparchitecture.com/",
     label: "SNP",
     external: true,
   },
-  { href: "/metalogic", label: "+META LOGIC", external: false, opensModal: false },
-  { href: "/about", label: "ABOUT US", external: false, opensModal: false },
+  { href: "/metalogic", label: "+META LOGIC", external: false },
+  { href: "/about", label: "ABOUT US", external: false },
 ]
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const [ndbOpen, setNdbOpen] = useState(false)
   const { language, setLanguage } = useLanguage()
 
   return (
@@ -48,20 +45,6 @@ export function SiteHeader() {
                 >
                   {item.label}
                 </a>
-              ) : item.opensModal ? (
-                <button
-                  key={item.href}
-                  type="button"
-                  onClick={() => setNdbOpen(true)}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-foreground",
-                    ndbOpen || pathname === "/ndb"
-                      ? "text-foreground"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {item.label}
-                </button>
               ) : (
                 <Link
                   key={item.href}
@@ -107,7 +90,6 @@ export function SiteHeader() {
           </button>
         </div>
       </div>
-      <NDBModal open={ndbOpen} onClose={() => setNdbOpen(false)} />
     </header>
   )
 }
