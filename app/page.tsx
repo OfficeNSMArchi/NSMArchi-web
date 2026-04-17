@@ -3,10 +3,10 @@
 import { ProjectCard } from "@/components/project-card"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { projects } from "@/lib/projects-data"
+import { allProjects } from "@/data/projects/index"
 
 // 홈 메인 노출은 데이터에서 직접 지정
-const featuredProjects = projects
+const featuredProjects = allProjects
   .filter((p) => p.showOnHome)
   .sort((a, b) => {
     const aIsResearch = a.category === "research"

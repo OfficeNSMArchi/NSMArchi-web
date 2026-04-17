@@ -4,10 +4,10 @@ import { ProjectCard } from "@/components/project-card"
 import { MetalogicHeader } from "@/components/metalogic-header"
 import { useMetalogicCategory } from "@/components/metalogic-category-provider"
 import { SiteFooter } from "@/components/site-footer"
-import { projects } from "@/lib/projects-data"
+import { allProjects } from "@/data/projects/index"
 
 const hiddenOnMetaLogicPage = new Set<string>(["ml-factory", "nsm-resort"])
-const metalogicProjects = projects.filter(
+const metalogicProjects = allProjects.filter(
   (p) => p.companies.includes("metalogic") && !hiddenOnMetaLogicPage.has(p.id),
 )
 
