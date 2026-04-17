@@ -13,21 +13,20 @@ interface ModalProps {
   }>;
 }
 
-// 닫는 애니메이션 시간(ms). CSS duration-700과 일치시켜야 끔기지 않음.
-const CLOSE_ANIMATION_MS = 700
+// 1. 닫는 애니메이션 시간을 ProjectDetailView와 동일하게 1000ms(1초)로 수정합니다.
+const CLOSE_ANIMATION_MS = 1000
 
 export default function ProjectModal({ params }: ModalProps) {
   const router = useRouter();
   const { id } = use(params);
   const project = allProjects.find((p) => p.id === id);
 
-  // 닫힘 전환 상태: Dialog open은 false로 두면서 애니메이션 재생 중
   const [isClosing, setIsClosing] = useState(false)
 
   const handleClose = () => {
-    if (isClosing) return // 중복 실행 방지
+    if (isClosing) return 
     setIsClosing(true)
-    // CSS fade-out이 끝난 뒤에만 라우팅
+    // 1초 뒤에 뒤로가기 실행
     setTimeout(() => {
       router.back()
     }, CLOSE_ANIMATION_MS)
@@ -36,6 +35,7 @@ export default function ProjectModal({ params }: ModalProps) {
   if (!project) return null;
 
   return (
+    // 바깥 영역을 누르면 자동으로 handleClose가 실행됩니다.
     <Dialog open={!isClosing} onOpenChange={(open) => { if (!open) handleClose() }}>
       <DialogPortal>
         <DialogContent 
@@ -44,24 +44,17 @@ export default function ProjectModal({ params }: ModalProps) {
             "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] !max-w-none w-screen h-[85vh] md:h-[80vh] p-0 bg-transparent",
             "!grid-rows-1 !grid-cols-1",
             "border-none rounded-none outline-none shadow-none overflow-hidden",
-            // 열/닫기 양방향 페이드 + 줌 애니메이션 (CSS만)
+            // 2. 닫힐 때 시간을 duration-1000으로 수정합니다.
             "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-75 data-[state=open]:duration-500",
-            "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-75 data-[state=closed]:duration-700"
+            "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-75 data-[state=closed]:duration-1000"
           )}
         >
           <DialogTitle className="sr-only">{project.titleKo || project.title}</DialogTitle>
           <div className="relative w-full h-full min-h-0">
-            <ProjectDetailView project={project} />
+            {/* 3. 핵심: 자식 컴포넌트에게 현재 부모가 닫히는 중이라는 신호(isExternalClosing)를 보냅니다. */}
+            <ProjectDetailView project={project} isExternalClosing={isClosing} />
             
-            <button 
-              onClick={handleClose}
-              className="absolute top-6 left-6 z-[60] text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+            {/* 4. [삭제] 왼쪽 상단에 중복으로 있던 X 버튼을 제거했습니다. */}
           </div>
         </DialogContent>
       </DialogPortal>
