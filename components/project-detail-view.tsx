@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { Project } from '@/types/project'
-import { motion } from "framer-motion"
 
 interface ProjectDetailViewProps {
   project: Project;
@@ -14,16 +13,6 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textPanelRef = useRef<HTMLDivElement>(null);
   const { language, setLanguage, t } = useLanguage()
-
-  // 커버 슬라이드가 즐인 중이면 false, 완료되면 true. 나머지 슬라이드가 이때 페이드인됨.
-  const [contentVisible, setContentVisible] = useState(false)
-
-  // 폴백: 모달이 아닌 직접 접근 시에는 layout animation이 발생하지 않으므로
-  // 일정 시간 후 무조건 컨텐츠를 보이게 함.
-  useEffect(() => {
-    const timer = setTimeout(() => setContentVisible(true), 500)
-    return () => clearTimeout(timer)
-  }, [])
   const dragStateRef = useRef<{
     active: boolean
     pointerId: number | null
@@ -252,21 +241,11 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 key={`m-img-${index}`}
                 className="snap-start flex h-full w-full items-center justify-center bg-white dark:bg-black overflow-hidden"
             >
-              {slide.src === coverSrc ? (
-                <motion.img
-                  layoutId={`image-${project.id}`}
-                  src={slide.src}
-                  className="block h-full w-auto max-w-full object-contain select-none"
-                  alt={slide.alt ?? "image"}
-                  onLayoutAnimationComplete={() => setContentVisible(true)}
-                />
-              ) : (
-                <img
-                  src={slide.src}
-                  className="block h-full w-auto max-w-full object-contain select-none"
-                  alt={slide.alt ?? "image"}
-                />
-              )}
+              <img
+                src={slide.src}
+                className="block h-full w-auto max-w-full object-contain select-none"
+                alt={slide.alt ?? "image"}
+              />
             </section>
           )
         })}
@@ -289,14 +268,6 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 key={`text-${index}`}
                 data-slide="text"
                 className="relative flex-none h-full w-[500px] max-h-full min-h-0 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800"
-                style={
-                  index === 0
-                    ? undefined
-                    : {
-                        opacity: contentVisible ? 1 : 0,
-                        transition: "opacity 500ms ease-out",
-                      }
-                }
               >
                 <div className="pointer-events-auto absolute right-4 top-4 bottom-4 z-10 hidden md:flex flex-col justify-between">
                   <button
@@ -408,40 +379,16 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
             <div
               key={`img-${index}`}
               className="flex-none h-full max-h-full flex items-center justify-center border-r border-zinc-100 dark:border-zinc-800 overflow-hidden"
-              style={
-                slide.src === coverSrc
-                  ? undefined
-                  : {
-                      opacity: contentVisible ? 1 : 0,
-                      transition: "opacity 500ms ease-out",
-                    }
-              }
             >
-              {slide.src === coverSrc ? (
-                <motion.img
-                  layoutId={`image-${project.id}`}
-                  src={slide.src}
-                  className="block h-full w-auto object-contain select-none"
-                  alt={slide.alt ?? "image"}
-                  onLayoutAnimationComplete={() => setContentVisible(true)}
-                />
-              ) : (
-                <img
-                  src={slide.src}
-                  className="block h-full w-auto object-contain select-none"
-                  alt={slide.alt ?? "image"}
-                />
-              )}
+              <img
+                src={slide.src}
+                className="block h-full w-auto object-contain select-none"
+                alt={slide.alt ?? "image"}
+              />
             </div>
           )
         })}
-        <div
-          className="flex-none w-[20vw] h-full bg-zinc-50 dark:bg-zinc-900/10 snap-end flex items-center justify-center"
-          style={{
-            opacity: contentVisible ? 1 : 0,
-            transition: "opacity 500ms ease-out",
-          }}
-        >
+        <div className="flex-none w-[20vw] h-full bg-zinc-50 dark:bg-zinc-900/10 snap-end flex items-center justify-center">
            <span className="text-[10px] uppercase tracking-[2em] text-zinc-300 rotate-90 font-bold opacity-30">END OF PROJECT</span>
         </div>
       </div>
