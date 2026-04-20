@@ -35,7 +35,7 @@ export const snpBachHouse: Project = {
     },
     {
       type: "text",
-      title: { ko: "임대 주거의 새로운 전형(Typology) 탐구.", en: "Bach House" },
+      title: { ko: "임대 주거의 새로운 전형(Typology) 탐구.", en: "Exploration for the new typology of rented house" },
       body: {
         ko: "민간 임대 주거 공간이 지녀야 할 새로운 스탠다드를 제안하고자 했다. 기존 임대 주택의 획일화된 문법에서 벗어나, 하이엔드 주거가 갖추어야 할 본질적인 가치를 건축적으로 구현하는 데 집중했다. 단순한 주거 공급을 넘어 도시의 맥락 안에서 영속성을 갖는 건축물을 목표로 삼았다.",
         en: "Exploring a new typology for rental housing. We aimed to propose a higher standard for private rental living by moving beyond uniform conventions and focusing on the essential values of high-end residential architecture.",
