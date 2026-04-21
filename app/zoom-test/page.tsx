@@ -66,32 +66,6 @@ export default function ZoomTestPage() {
     return () => { document.body.style.overflow = ''; };
   }, [isModalOpen]);
 
-  // 핀치줌 패닝 시 모달 위치 실시간 보정 (모바일 모드)
-  useEffect(() => {
-    if (!isModalOpen || !selectedCardData || selectedCardData.shouldZoom) return;
-    const vp = window.visualViewport;
-    if (!vp) return;
-
-    const { rect, vpOffsetY: initOffsetY, vpOffsetX: initOffsetX } = selectedCardData;
-
-    const update = () => {
-      const el = modalInnerRef.current;
-      if (!el) return;
-      const deltaY = vp.offsetTop - initOffsetY;
-      const newTop = Math.round(rect.top - deltaY) - Math.floor(MODAL_HEIGHT_BUFFER / 2);
-      el.style.top = `${newTop}px`;
-      el.style.left = `${vp.offsetLeft}px`;
-      el.style.width = `${vp.width}px`;
-    };
-
-    vp.addEventListener('scroll', update);
-    vp.addEventListener('resize', update);
-    return () => {
-      vp.removeEventListener('scroll', update);
-      vp.removeEventListener('resize', update);
-    };
-  }, [isModalOpen, selectedCardData]);
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
     setIsDragging(true);
@@ -270,7 +244,8 @@ export default function ZoomTestPage() {
             backgroundColor: `rgba(0, 0, 0, ${OVERLAY_OPACITY / 100})`,
             opacity: isModalOpen ? 1 : 0,
             pointerEvents: isModalOpen ? 'auto' : 'none',
-            transition: `opacity ${isModalOpen ? MODAL_FADE_IN : MODAL_FADE_OUT}ms ease-in-out`
+            transition: `opacity ${isModalOpen ? MODAL_FADE_IN : MODAL_FADE_OUT}ms ease-in-out`,
+            touchAction: isModalOpen ? 'none' : 'auto',
           }}
           onClick={handleCloseModal}
         >
@@ -287,6 +262,7 @@ export default function ZoomTestPage() {
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
               className={`flex h-full overflow-x-auto overflow-y-hidden w-full hide-scrollbar ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              style={{ touchAction: 'pan-x' }}
             >
               {/* 데스크탑 전용: 왼쪽 정보 패널 */}
               {selectedCardData.shouldZoom && (
