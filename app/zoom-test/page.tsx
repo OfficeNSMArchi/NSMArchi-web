@@ -45,7 +45,7 @@ const Card: React.FC<CardProps> = ({ id, title, image, onCardClick, isVisible })
 };
 
 export default function ZoomTestPage() {
-  const [selectedCardData, setSelectedCardData] = useState<{ id: number; title: string; rect: DOMRect; image?: string; vw: number; vh: number; shouldZoom: boolean } | null>(null);
+  const [selectedCardData, setSelectedCardData] = useState<{ id: number; title: string; rect: DOMRect; image?: string; vw: number; vh: number; vpOffsetX: number; vpOffsetY: number; shouldZoom: boolean } | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,8 +89,10 @@ export default function ZoomTestPage() {
     const vp = window.visualViewport;
     const vw = vp ? vp.width : window.innerWidth;
     const vh = vp ? vp.height : window.innerHeight;
+    const vpOffsetX = vp ? vp.offsetLeft : 0;
+    const vpOffsetY = vp ? vp.offsetTop : 0;
     const shouldZoom = (vw * 0.4) / rect.width >= 1;
-    setSelectedCardData({ id, title, rect, image, vw, vh, shouldZoom });
+    setSelectedCardData({ id, title, rect, image, vw, vh, vpOffsetX, vpOffsetY, shouldZoom });
     if (shouldZoom) setIsZoomed(true);
 
     setTimeout(() => {
@@ -165,12 +167,12 @@ export default function ZoomTestPage() {
   const getModalStyle = useCallback((): CSSProperties => {
     if (!selectedCardData) return { display: 'none' };
 
-    const { rect, vw: viewportWidth, vh: viewportHeight, shouldZoom } = selectedCardData;
+    const { rect, vw: viewportWidth, vh: viewportHeight, vpOffsetX, vpOffsetY, shouldZoom } = selectedCardData;
 
     const baseStyle: CSSProperties = {
       position: 'fixed',
-      left: '0',
-      width: '100%',
+      left: `${vpOffsetX}px`,
+      width: `${viewportWidth}px`,
       opacity: isModalOpen ? 1 : 0,
       pointerEvents: isModalOpen ? 'auto' : 'none',
       transition: `opacity ${isModalOpen ? MODAL_FADE_IN : MODAL_FADE_OUT}ms ease-in-out`,
@@ -182,14 +184,14 @@ export default function ZoomTestPage() {
     };
 
     if (shouldZoom) {
-      // 데스크탑: 뷰포트 중앙에 위치
+      // 데스크탑: 뷰포트 중앙에 위치 (layout viewport 기준 = visual top + offset)
       const targetScale = (viewportWidth * 0.4) / rect.width;
       const cardHeight = Math.round(rect.height * targetScale) + MODAL_HEIGHT_BUFFER;
-      const modalTop = Math.round(viewportHeight * 0.5 - cardHeight / 2);
+      const modalTop = Math.round(vpOffsetY + viewportHeight * 0.5 - cardHeight / 2);
       return { ...baseStyle, top: `${modalTop}px`, height: `${cardHeight}px` };
     } else {
-      // 모바일: 카드 위치에 정확히 오버랩
-      const modalTop = Math.round(rect.top) - Math.floor(MODAL_HEIGHT_BUFFER / 2);
+      // 모바일: 카드 위치에 정확히 오버랩 (rect.top은 visual viewport 기준 → + vpOffsetY로 layout 기준 변환)
+      const modalTop = Math.round(rect.top + vpOffsetY) - Math.floor(MODAL_HEIGHT_BUFFER / 2);
       const cardHeight = Math.round(rect.height) + MODAL_HEIGHT_BUFFER;
       return { ...baseStyle, top: `${modalTop}px`, height: `${cardHeight}px` };
     }
