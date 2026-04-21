@@ -86,8 +86,9 @@ export default function ZoomTestPage() {
 
   const handleCardClick = (id: number, rect: DOMRect, image?: string) => {
     const title = `Project ${id + 1}`;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vp = window.visualViewport;
+    const vw = vp ? vp.width : window.innerWidth;
+    const vh = vp ? vp.height : window.innerHeight;
     const shouldZoom = (vw * 0.4) / rect.width >= 1;
     setSelectedCardData({ id, title, rect, image, vw, vh, shouldZoom });
     if (shouldZoom) setIsZoomed(true);
@@ -231,15 +232,6 @@ export default function ZoomTestPage() {
           ))}
         </div>
       </div>
-
-      {/* DEBUG OVERLAY - 확인 후 삭제 */}
-      {selectedCardData && (
-        <div style={{ position: 'fixed', top: 0, right: 0, background: 'red', color: 'white', zIndex: 9999, padding: '4px 8px', fontSize: '11px', lineHeight: 1.4 }}>
-          shouldZoom: {String(selectedCardData.shouldZoom)}<br/>
-          vw: {selectedCardData.vw}<br/>
-          rect.w: {Math.round(selectedCardData.rect.width)}
-        </div>
-      )}
 
       {/* Modal / Detail View */}
       {selectedCardData && (
