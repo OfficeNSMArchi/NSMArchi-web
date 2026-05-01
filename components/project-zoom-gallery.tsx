@@ -17,7 +17,7 @@ const MODAL_SCALE_FACTOR = 1.005; // Slight scale up to cover sub-pixel backgrou
 
 interface ZoomCardProps {
   project: Project;
-  onCardClick: (project: Project, rect: DOMRect) => void;
+  onCardClick: (project: Project, rect: DOMRect, el: HTMLButtonElement) => void;
   isVisible: boolean;
 }
 
@@ -29,7 +29,7 @@ const ProjectZoomCard: React.FC<ZoomCardProps> = ({ project, onCardClick, isVisi
 
   const handleClick = () => {
     if (ref.current) {
-      onCardClick(project, ref.current.getBoundingClientRect());
+      onCardClick(project, ref.current.getBoundingClientRect(), ref.current);
     }
   };
 
@@ -60,9 +60,11 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   const [selectedProject, setSelectedProject] = useState<{ project: Project; rect: DOMRect; vw: number; vh: number; headerHeight: number; vpOffsetX: number; vpOffsetY: number; scrollX: number; scrollY: number; originX: number; originY: number; shouldZoom: boolean } | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalRect, setModalRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const modalInnerRef = useRef<HTMLDivElement>(null);
+  const selectedCardElRef = useRef<HTMLButtonElement | null>(null);
   const originPathnameRef = useRef<string>('/');
   
   const [isDragging, setIsDragging] = useState(false);
@@ -123,12 +125,12 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     scrollContainerRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const handleCardClick = (project: Project, rect: DOMRect) => {
+  const handleCardClick = (project: Project, rect: DOMRect, el: HTMLButtonElement) => {
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
     const scrollX = window.scrollX || document.documentElement.scrollLeft;
     const scrollY = window.scrollY || document.documentElement.scrollTop;
-    
+
     // Get container rect to calculate origin relative to the container itself
     const containerRect = containerRef.current?.getBoundingClientRect();
     const containerLeft = containerRect ? containerRect.left : 0;
@@ -140,13 +142,23 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     const headerHVar = getComputedStyle(document.documentElement).getPropertyValue('--header-h')
     const headerHeight = headerHVar ? parseFloat(headerHVar) : (document.querySelector('header')?.offsetHeight ?? 64);
 
+    selectedCardElRef.current = el;
+    setModalRect(null);
     setSelectedProject({ project, rect, vw, vh, headerHeight, vpOffsetX: 0, vpOffsetY: 0, scrollX, scrollY, originX, originY, shouldZoom: true });
     setIsZoomed(true);
 
     originPathnameRef.current = window.location.pathname;
     window.history.pushState(null, '', `/projects/${project.id}`);
 
-    setTimeout(() => setIsModalOpen(true), ZOOM_DURATION + MODAL_DELAY);
+    setTimeout(() => {
+      // Measure the card's actual on-screen rect AFTER zoom transform settled.
+      // Modal aligns to this measurement instead of pre-calculating from math.
+      if (selectedCardElRef.current) {
+        const r = selectedCardElRef.current.getBoundingClientRect();
+        setModalRect({ left: r.left, top: r.top, width: r.width, height: r.height });
+      }
+      setIsModalOpen(true);
+    }, ZOOM_DURATION + MODAL_DELAY);
   };
 
   const handleCloseModal = () => {
@@ -156,7 +168,11 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
 
     setTimeout(() => {
       setIsZoomed(false);
-      setTimeout(() => setSelectedProject(null), ZOOM_DURATION);
+      setTimeout(() => {
+        setSelectedProject(null);
+        setModalRect(null);
+        selectedCardElRef.current = null;
+      }, ZOOM_DURATION);
     }, MODAL_FADE_OUT);
   };
 
@@ -207,23 +223,21 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   const getModalStyle = useCallback((): CSSProperties => {
     if (!selectedProject) return { display: 'none' };
 
-    const { rect, vw, vh, headerHeight, vpOffsetX } = selectedProject;
-    const isDesktop = vw >= 1024;
-    const targetScale = isDesktop ? (vw * 0.4 / rect.width) : (vw / rect.width);
-    const cardHeight = Math.round(rect.height * targetScale) + MODAL_HEIGHT_BUFFER;
-    // 헤더 아래 콘텐츠 영역 안에서 수직 중앙 정렬
-    const contentHeight = vh - headerHeight;
-    const modalTop = headerHeight + (contentHeight - cardHeight) / 2;
+    const { vw } = selectedProject;
+    // Use the measured post-zoom rect when available; until then keep the modal
+    // hidden (it's still mounted but invisible) so we never flash a stale position.
+    const top = modalRect ? modalRect.top : 0;
+    const height = modalRect ? modalRect.height : 0;
 
     return {
       position: 'fixed',
-      left: `${vpOffsetX}px`,
+      left: `0px`,
       width: `${vw}px`,
-      top: `${modalTop}px`,
+      top: `${top}px`,
       transform: `scale(${MODAL_SCALE_FACTOR})`,
-      height: `${cardHeight}px`,
-      opacity: isModalOpen ? 1 : 0,
-      pointerEvents: isModalOpen ? 'auto' : 'none',
+      height: `${height}px`,
+      opacity: isModalOpen && modalRect ? 1 : 0,
+      pointerEvents: isModalOpen && modalRect ? 'auto' : 'none',
       transition: `opacity ${isModalOpen ? MODAL_FADE_IN : MODAL_FADE_OUT}ms ease-in-out`,
       zIndex: 100,
       display: 'flex',
@@ -231,7 +245,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
       backgroundColor: 'white',
       overflow: 'hidden',
     };
-  }, [selectedProject, isModalOpen]);
+  }, [selectedProject, isModalOpen, modalRect]);
 
   return (
     <>
@@ -281,7 +295,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
               {selectedProject.vw >= 1024 && (
                 <div
                   className="h-full flex-shrink-0 flex flex-col justify-start px-5 bg-white border-r border-gray-100"
-                  style={{ width: '10%', paddingTop: '2.5rem' }}
+                  style={{ width: modalRect ? `${modalRect.left}px` : '10%', paddingTop: '2.5rem' }}
                 >
                   <h2 className="text-[clamp(10px,0.9vw,16px)] font-black tracking-tighter leading-tight mb-5 text-right break-keep">
                     {language === 'ko' ? selectedProject.project.titleKo : selectedProject.project.title}
@@ -302,7 +316,9 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
               <div
                 className="flex-shrink-0 overflow-hidden self-center relative"
                 style={{
-                  width: selectedProject.vw < 1024 ? `${selectedProject.vw}px` : '40%',
+                  width: modalRect
+                    ? `${modalRect.width}px`
+                    : (selectedProject.vw < 1024 ? `${selectedProject.vw}px` : '40%'),
                   height: '100%',
                 }}
               >
