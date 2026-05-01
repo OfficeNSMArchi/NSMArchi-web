@@ -14,13 +14,13 @@ const TEXT_PADDING = 'p-3 md:p-8'; // 텍스트 슬라이드 안쪽 여백
 // 레이아웃 비율 — 커버/슬라이드 너비와 좌우 여백은 함께 조정해야 함
 // 닫힌 상태 중앙정렬: MARGIN_W*2 + PHOTO_W = 100% 이면 완벽 중앙
 const MAX_CONTAINER_WIDTH = '1920px';
-const PHOTO_W = 'w-[70%] md:w-[35%] min-w-[70%] md:min-w-[35%] max-w-[70%] md:max-w-[35%]';
+const PHOTO_W = 'w-[70%] landscape:w-[50%] md:w-[35%] min-w-[70%] landscape:min-w-[50%] md:min-w-[35%] max-w-[70%] landscape:max-w-[50%] md:max-w-[35%]';
 const MARGIN_W = 'w-[15%] md:w-[25%] min-w-[15%] md:min-w-[25%] max-w-[15%] md:max-w-[25%]';
 
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
-const FONT_TITLE        = 'clamp(0.6rem, 6cqw, 12pt)';
-const FONT_META         = 'clamp(0.4rem, 3cqw, 10pt)';
-const FONT_DESC         = 'clamp(0.5rem, 1.5cqw, 8pt)';
+const FONT_TITLE        = 'clamp(0.8rem, 6cqw, 12pt)';
+const FONT_META         = 'clamp(0.7rem, 3cqw, 10pt)';
+const FONT_DESC         = 'clamp(0.7rem, 1.5cqw, 8pt)';
 const FONT_BLOCK_TITLE  = 'clamp(0.5rem, 3.5cqw, 16pt)';  // 콘텐츠 블록 제목
 const FONT_BLOCK_BODY   = 'clamp(0.4rem, 2.2cqw, 12pt)';  // 콘텐츠 블록 본문
 

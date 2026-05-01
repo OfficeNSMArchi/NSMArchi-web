@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @custom-variant dark (&:is(.dark *));
+@custom-variant landscape (@media (orientation: landscape));
 
 :root {
   --background: oklch(1 0 0);
