@@ -274,7 +274,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
             opacity: isModalOpen ? 1 : 0,
             pointerEvents: isModalOpen ? 'auto' : 'none',
             transition: `opacity ${isModalOpen ? MODAL_FADE_IN : MODAL_FADE_OUT}ms ease-in-out`,
-            touchAction: isModalOpen ? 'none' : 'auto',
+            touchAction: isModalOpen ? 'pinch-zoom' : 'auto',
           }}
           onClick={handleCloseModal}
         >
@@ -290,7 +290,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
               className={`flex h-full overflow-x-auto overflow-y-hidden w-full hide-scrollbar ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-              style={{ touchAction: 'pan-x' }}
+              style={{ touchAction: 'pan-x pinch-zoom' }}
             >
               {selectedProject.vw >= 1024 && (
                 <div

@@ -32,6 +32,28 @@ export function SiteHeader() {
     return () => observer.disconnect()
   }, [])
 
+  // Anchor header to visual viewport so it stays the same size and on-screen
+  // when the user pinch-zooms (counter-scales and counter-translates the pinch).
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const update = () => {
+      el.style.transformOrigin = '0 0'
+      el.style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`
+    }
+
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
+
   return (
     <>
       <header ref={headerRef} className="fixed top-0 left-0 right-0 w-full z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
