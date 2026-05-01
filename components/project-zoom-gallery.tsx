@@ -21,8 +21,8 @@ const MARGIN_W = 'w-[15%] md:w-[25%] min-w-[15%] md:min-w-[25%] max-w-[15%] md:m
 const FONT_TITLE        = 'clamp(0.6rem, 6cqw, 12pt)';
 const FONT_META         = 'clamp(0.4rem, 3cqw, 10pt)';
 const FONT_DESC         = 'clamp(0.5rem, 1.5cqw, 8pt)';
-const FONT_BLOCK_TITLE  = 'clamp(0.8rem, 3.5cqw, 16pt)';  // 콘텐츠 블록 제목
-const FONT_BLOCK_BODY   = 'clamp(0.6rem, 2.2cqw, 12pt)';  // 콘텐츠 블록 본문
+const FONT_BLOCK_TITLE  = 'clamp(0.5rem, 3.5cqw, 16pt)';  // 콘텐츠 블록 제목
+const FONT_BLOCK_BODY   = 'clamp(0.4rem, 2.2cqw, 12pt)';  // 콘텐츠 블록 본문
 
 interface ProjectRowProps {
   project: Project;
