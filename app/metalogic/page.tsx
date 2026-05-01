@@ -23,15 +23,13 @@ export default function MetaLogicPage() {
 
       <main>
         <section className="py-8 md:py-12">
-          <div className="mx-auto max-w-7xl px-6">
-            {filteredProjects.length === 0 ? (
-              <p className="mt-8 text-sm text-muted-foreground">
-                No projects yet in this category.
-              </p>
-            ) : (
-              <ProjectZoomGallery key={selectedCategory} projects={filteredProjects} />
-            )}
-          </div>
+          {filteredProjects.length === 0 ? (
+            <p className="mt-8 px-6 text-sm text-muted-foreground">
+              No projects yet in this category.
+            </p>
+          ) : (
+            <ProjectZoomGallery key={selectedCategory} projects={filteredProjects} />
+          )}
         </section>
       </main>
 

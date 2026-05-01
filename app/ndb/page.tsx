@@ -1,6 +1,12 @@
+"use client"
+
 import React from 'react';
-import { Building2, Layout, Box, PenTool, Phone, MapPin, Mail, Award, CheckCircle2 } from 'lucide-react';
+import { Building2, Layout, Box, PenTool, Phone, MapPin, Mail } from 'lucide-react';
 import { NsmHomeCorner } from '@/components/nsm-home-corner';
+import { allProjects } from "@/data/projects/index"
+import { ProjectZoomGallery } from "@/components/project-zoom-gallery"
+
+const ndbProjects = allProjects.filter(p => p.companies.includes("ndb"));
 
 export default function Page() {
   // 서비스 데이터 [cite: 41, 44, 47, 49]
@@ -107,22 +113,7 @@ export default function Page() {
       <section id="projects" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-16 text-center italic tracking-tight">Featured Works</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {projects.map((project, idx) => (
-              <div key={idx} className="group cursor-pointer">
-                <div className="relative aspect-[4/5] bg-slate-200 overflow-hidden mb-6">
-                  <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-transparent transition-colors z-10" />
-                </div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-bold">{project.title}</h4>
-                    <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">{project.category}</p>
-                  </div>
-                  <span className="text-xs font-medium text-slate-300">{project.year}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ProjectZoomGallery projects={ndbProjects} />
         </div>
       </section>
 

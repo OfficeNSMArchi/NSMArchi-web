@@ -23,9 +23,7 @@ export default function HomePage() {
       <main>
         {/* Projects Zoom Gallery */}
         <section className="py-8 md:py-12">
-          <div className="mx-auto max-w-7xl px-6">
-            <ProjectZoomGallery projects={featuredProjects} />
-          </div>
+          <ProjectZoomGallery projects={featuredProjects} />
         </section>
       </main>
 
