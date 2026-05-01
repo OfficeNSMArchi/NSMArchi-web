@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
+  } as any,
+  images: {
+    domains: ["images.unsplash.com", "picsum.photos"],
   },
 };
 

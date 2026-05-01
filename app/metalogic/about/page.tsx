@@ -9,7 +9,7 @@ export default function MetalogicAboutPage() {
   const { t } = useLanguage()
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 109px)' }}>
       <MetalogicHeader />
 
       <main className="mx-auto max-w-4xl px-6 py-16 md:py-24">

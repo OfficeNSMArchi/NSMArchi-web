@@ -1,5 +1,6 @@
 import React from 'react';
 import { Building2, Layout, Box, PenTool, Phone, MapPin, Mail, Award, CheckCircle2 } from 'lucide-react';
+import { NsmHomeCorner } from '@/components/nsm-home-corner';
 
 export default function Page() {
   // 서비스 데이터 [cite: 41, 44, 47, 49]
@@ -37,6 +38,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans">
+      <NsmHomeCorner />
       {/* Navigation */}
       <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">

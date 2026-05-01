@@ -1,9 +1,9 @@
 "use client"
 
-import { ProjectCard } from "@/components/project-card"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { allProjects } from "@/data/projects/index"
+import { ProjectZoomGallery } from "@/components/project-zoom-gallery"
 
 // 홈 메인 노출은 데이터에서 직접 지정
 const featuredProjects = allProjects
@@ -17,21 +17,14 @@ const featuredProjects = allProjects
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 64px)' }}>
       <SiteHeader />
 
       <main>
-        {/* Projects Grid */}
+        {/* Projects Zoom Gallery */}
         <section className="py-8 md:py-12">
           <div className="mx-auto max-w-7xl px-6">
-            <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredProjects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                />
-              ))}
-            </div>
+            <ProjectZoomGallery projects={featuredProjects} />
           </div>
         </section>
       </main>

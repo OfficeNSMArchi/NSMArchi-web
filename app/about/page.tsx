@@ -297,7 +297,7 @@ export default function AboutPage() {
   }, [companies, sectionMinHeights])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 64px)' }}>
       <SiteHeader />
 
       <main className="mx-auto max-w-4xl px-6 py-16 md:py-24">

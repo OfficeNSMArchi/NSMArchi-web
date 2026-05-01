@@ -28,7 +28,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
-      <main className="flex-grow pt-16 h-[calc(100vh-64px)]">
+      <main className="flex-grow" style={{ paddingTop: 'var(--header-h, 64px)', height: 'calc(100vh - var(--header-h, 64px))' }}>
         <ProjectDetailView project={project} />
       </main>
       <SiteFooter />
