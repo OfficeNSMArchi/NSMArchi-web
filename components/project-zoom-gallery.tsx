@@ -18,11 +18,11 @@ const PHOTO_W = 'w-[70%] landscape:w-[50%] md:w-[35%] min-w-[70%] landscape:min-
 const MARGIN_W = 'w-[15%] md:w-[25%] min-w-[15%] md:min-w-[25%] max-w-[15%] md:max-w-[25%]';
 
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
-const FONT_TITLE        = 'clamp(0.7rem, 3cqw, 12pt)';
-const FONT_META         = 'clamp(0.6rem, 2cqw, 10pt)';
-const FONT_DESC         = 'clamp(0.6rem, 2cqw, 8pt)';
-const FONT_BLOCK_TITLE  = 'clamp(0.6rem, 4cqw, 16pt)';  // 콘텐츠 블록 제목
-const FONT_BLOCK_BODY   = 'clamp(0.6rem, 3cqw, 12pt)';  // 콘텐츠 블록 본문
+const FONT_TITLE        = 'clamp(0.4rem, 3cqw, 12pt)';
+const FONT_META         = 'clamp(0.3rem, 2.5cqw, 10pt)';
+const FONT_DESC         = 'clamp(0.3rem, 2.5cqw, 8pt)';
+const FONT_BLOCK_TITLE  = 'clamp(0.2rem, 3cqw, 16pt)';  // 콘텐츠 블록 제목
+const FONT_BLOCK_BODY   = 'clamp(0.2rem, 2.5cqw, 12pt)';  // 콘텐츠 블록 본문
 
 interface ProjectRowProps {
   project: Project;
@@ -123,7 +123,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
               {title}
             </h2>
 
-            <div className="flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-bold border-r-[2px] md:border-r-[3px] border-black pr-2 md:pr-4 w-full"
+            <div className="flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-bold w-full"
                  style={{ fontSize: FONT_META }}
             >
                <p className="break-words">{language === 'ko' ? project.locationKo : project.location}</p>
@@ -254,6 +254,16 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
 
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const handle = (e: MediaQueryListEvent) => {
+      if (!e.matches) switchView('list');
+    };
+    mq.addEventListener('change', handle);
+    if (!mq.matches) switchView('list');
+    return () => mq.removeEventListener('change', handle);
+  }, []);
+
   const switchView = (mode: 'list' | 'grid') => {
     if (mode === displayMode) return;
     if (mode === 'grid') {
@@ -293,7 +303,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     <LayoutGroup>
     <div className="w-full relative flex flex-col items-center">
       {/* View Mode Toggle */}
-      <div className="fixed right-6 z-40" style={{ top: 'calc(var(--header-h, 64px) + 8px)' }}>
+      <div className="hidden sm:block fixed right-6 z-40" style={{ top: 'calc(var(--header-h, 64px) + 8px)' }}>
         <button
           onClick={() => switchView(viewMode === 'list' ? 'grid' : 'list')}
           className="p-2 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-gray-100 text-gray-600 hover:text-black transition-colors"
