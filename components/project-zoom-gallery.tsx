@@ -108,6 +108,21 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     };
   }, [isModalOpen]);
 
+  // Close modal on orientation/resize changes
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (isModalOpen) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('orientationchange', handleViewportChange);
+    window.addEventListener('resize', handleViewportChange);
+    return () => {
+      window.removeEventListener('orientationchange', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
+    };
+  }, [isModalOpen]);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
     setIsDragging(true);

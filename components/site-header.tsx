@@ -32,25 +32,14 @@ export function SiteHeader() {
     return () => observer.disconnect()
   }, [])
 
-  // Anchor header to visual viewport so it stays the same size and on-screen
-  // when the user pinch-zooms (counter-scales and counter-translates the pinch).
+  // Handle orientation/resize changes: close modal if viewport changes
   useEffect(() => {
-    const el = headerRef.current
-    if (!el) return
-    const vv = window.visualViewport
-    if (!vv) return
-
-    const update = () => {
-      el.style.transformOrigin = '0 0'
-      el.style.transform = `translate(${vv.offsetLeft}px, ${vv.offsetTop}px) scale(${1 / vv.scale})`
+    const handleOrientationChange = () => {
+      setMenuOpen(false)
     }
-
-    update()
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
+    window.addEventListener('orientationchange', handleOrientationChange)
     return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
+      window.removeEventListener('orientationchange', handleOrientationChange)
     }
   }, [])
 
