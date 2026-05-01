@@ -127,6 +127,7 @@
     -ms-overflow-style: none !important;  /* IE and Edge */
     scrollbar-width: none !important;     /* Firefox */
     overflow-y: scroll;                   /* Keep scroll functionality */
+    overflow-x: hidden;                   /* 헤더 가로 밀림 방지 */
   }
   
   html::-webkit-scrollbar, 
