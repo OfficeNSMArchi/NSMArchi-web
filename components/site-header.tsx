@@ -75,11 +75,11 @@ export function SiteHeader() {
               className="flex items-center text-xl font-bold tracking-tight shrink-0"
               aria-label="브랜드 메뉴"
             >
-              <span className="text-foreground hover:opacity-60 transition-opacity">N</span>
-              <span className="text-muted-foreground">+</span>
-              <span className="text-foreground hover:opacity-60 transition-opacity">S</span>
-              <span className="text-muted-foreground">+</span>
-              <span className="text-foreground hover:opacity-60 transition-opacity">M</span>
+              <span className="text-foreground hover:opacity-60 transition-opacity" style={{ animation: 'nsm-wave 5s ease-in-out infinite', animationDelay: '0s' }}>N</span>
+              <span className="text-foreground" style={{ animation: 'nsm-wave 5s ease-in-out infinite', animationDelay: '1s' }}>+</span>
+              <span className="text-foreground hover:opacity-60 transition-opacity" style={{ animation: 'nsm-wave 5s ease-in-out infinite', animationDelay: '2s' }}>S</span>
+              <span className="text-muted-foreground" style={{ animation: 'nsm-wave 5s ease-in-out infinite', animationDelay: '3s' }}>+</span>
+              <span className="text-foreground hover:opacity-60 transition-opacity" style={{ animation: 'nsm-wave 5s ease-in-out infinite', animationDelay: '4s' }}>M</span>
             </button>
 
             {/* 드롭다운 — N+S+M 아래, 내용 크기만큼, 블러 */}
