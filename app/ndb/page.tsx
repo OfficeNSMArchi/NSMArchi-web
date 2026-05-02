@@ -1,14 +1,17 @@
 "use client"
 
 import React from 'react';
-import { Building2, Layout, Box, PenTool, Phone, MapPin, Mail } from 'lucide-react';
-import { NsmHomeCorner } from '@/components/nsm-home-corner';
+import { Building2, Layout, Box, PenTool } from 'lucide-react';
+import { NdbSiteHeader } from '@/components/ndb-site-header';
+import { NdbCategoryProvider, useNdbCategory } from '@/components/ndb-category-provider';
+import { SiteFooter } from '@/components/site-footer';
 import { allProjects } from "@/data/projects/index"
 import { ProjectZoomGallery } from "@/components/project-zoom-gallery"
 
 const ndbProjects = allProjects.filter(p => p.companies.includes("ndb"));
 
-export default function Page() {
+function NdbContent() {
+  const { selectedCategory } = useNdbCategory()
   // 서비스 데이터 [cite: 41, 44, 47, 49]
   const services = [
     {
@@ -43,23 +46,8 @@ export default function Page() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans">
-      <NsmHomeCorner />
-      {/* Navigation */}
-      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tighter text-blue-900 leading-none">nDB Architects</span> {/*  */}
-            <span className="text-[10px] text-slate-500 tracking-widest uppercase mt-1">Digital Engineering Solution</span>
-          </div>
-          <div className="hidden md:flex space-x-8 text-xs font-semibold uppercase tracking-widest text-slate-600">
-            <a href="#services" className="hover:text-blue-600">Services</a>
-            <a href="#projects" className="hover:text-blue-600">Projects</a>
-            <a href="#about" className="hover:text-blue-600">About</a>
-            <a href="#contact" className="hover:text-blue-600">Contact</a>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 48px)' }}>
+      <NdbSiteHeader />
 
       {/* Hero Section */}
       <section className="relative h-[90vh] flex items-center bg-slate-900 overflow-hidden">
@@ -113,7 +101,8 @@ export default function Page() {
       <section id="projects" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-16 text-center italic tracking-tight">Featured Works</h2>
-          <ProjectZoomGallery projects={ndbProjects} />
+          <ProjectZoomGallery storageKey="ndb" projects={ndbProjects} />
+
         </div>
       </section>
 
@@ -150,28 +139,15 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <footer id="contact" className="bg-white border-t py-24 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between">
-          <div className="mb-12 md:mb-0">
-            <h3 className="text-2xl font-bold mb-8">nDB Architects</h3> {/*  */}
-            <div className="space-y-4 text-sm text-slate-500">
-              <p className="flex items-center"><MapPin className="w-4 h-4 mr-3 text-blue-600" /> 서울시 서초구 사평대로 18 402</p> {/* [cite: 4] */}
-              <p className="flex items-center"><Phone className="w-4 h-4 mr-3 text-blue-600" /> 010-2927-0651</p> {/* [cite: 4] */}
-              <p className="flex items-center italic"><Mail className="w-4 h-4 mr-3 text-blue-600" /> nDB_Arch@contact.com</p>
-            </div>
-          </div>
-          <div className="max-w-md w-full">
-            <p className="text-sm text-slate-400 font-light leading-relaxed mb-8">
-              기능성, 경제성, 지속가능성 등 다양한 고객의 요구에 부응하는 <br />
-              차별화된 엔지니어링 솔루션을 제공할 것을 약속드립니다. {/* [cite: 38, 39] */}
-            </p>
-            <div className="flex items-center text-xs font-bold text-slate-900 uppercase tracking-widest">
-              © 2026 nDB Architects. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
+}
+
+export default function Page() {
+  return (
+    <NdbCategoryProvider>
+      <NdbContent />
+    </NdbCategoryProvider>
+  )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { MetalogicHeader } from "@/components/metalogic-header"
+import { MetalogicSiteHeader } from "@/components/metalogic-site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { useLanguage } from "@/lib/language-context"
 import { metalogicAboutData } from "@/lib/metalogic-about-data"
@@ -9,8 +9,8 @@ export default function MetalogicAboutPage() {
   const { t } = useLanguage()
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 109px)' }}>
-      <MetalogicHeader />
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 48px)' }}>
+      <MetalogicSiteHeader />
 
       <main className="mx-auto max-w-4xl px-6 py-16 md:py-24">
         <div className="grid gap-10">

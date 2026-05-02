@@ -1,6 +1,6 @@
 "use client"
 
-import { MetalogicHeader } from "@/components/metalogic-header"
+import { MetalogicSiteHeader } from "@/components/metalogic-site-header"
 import { useMetalogicCategory } from "@/components/metalogic-category-provider"
 import { SiteFooter } from "@/components/site-footer"
 import { allProjects } from "@/data/projects/index"
@@ -13,13 +13,13 @@ const metalogicProjects = allProjects.filter(
 
 export default function MetaLogicPage() {
   const { selectedCategory } = useMetalogicCategory()
-  const filteredProjects = metalogicProjects.filter(
-    (project) => project.metalogicCategory === selectedCategory,
-  )
+  const filteredProjects = selectedCategory === "all"
+    ? metalogicProjects
+    : metalogicProjects.filter((project) => project.metalogicCategory === selectedCategory)
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 109px)' }}>
-      <MetalogicHeader />
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 48px)' }}>
+      <MetalogicSiteHeader />
 
       <main>
         <section className="py-8 md:py-12">
@@ -28,7 +28,7 @@ export default function MetaLogicPage() {
               No projects yet in this category.
             </p>
           ) : (
-            <ProjectZoomGallery key={selectedCategory} projects={filteredProjects} />
+            <ProjectZoomGallery storageKey="metalogic" projects={filteredProjects} />
           )}
         </section>
       </main>

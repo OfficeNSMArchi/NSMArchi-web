@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react"
 
-export type MetalogicCategoryKey = "practice" | "concept" | "research" | "academic"
+export type MetalogicCategoryKey = "all" | "practice" | "concept" | "research" | "academic"
 
 const MetalogicCategoryContext = createContext<{
   selectedCategory: MetalogicCategoryKey
@@ -11,7 +11,7 @@ const MetalogicCategoryContext = createContext<{
 
 export function MetalogicCategoryProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] =
-    useState<MetalogicCategoryKey>("practice")
+    useState<MetalogicCategoryKey>("all")
 
   return (
     <MetalogicCategoryContext.Provider

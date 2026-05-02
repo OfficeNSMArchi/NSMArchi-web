@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
-import { List, Grid2X2 } from 'lucide-react';
+import { List, Grid2X2, Pin } from 'lucide-react';
 
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -45,7 +45,7 @@ const FONT_BLOCK_BODY   = 'clamp(0.2rem, 2.5cqw, 12pt)';  // 콘텐츠 블록 �
 interface ProjectRowProps {
   project: Project;
   isExpanded: boolean;
-  onToggle: () => void;
+  onToggle: (x: number, y: number) => void;
   layoutId: string;
   scrollMode: 'horizontal' | 'vertical';
 }
@@ -78,12 +78,12 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
   const handlePointerUp = () => {
     isPointerDown.current = false;
   };
-  const handleContainerClick = () => {
-    if (isExpanded && !isDragging.current) onToggle();
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (isExpanded && !isDragging.current) onToggle(e.clientX, e.clientY);
   };
   const handleCoverClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isDragging.current) onToggle();
+    if (!isDragging.current) onToggle(e.clientX, e.clientY);
   };
 
   useEffect(() => {
@@ -288,8 +288,14 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
   );
 };
 
-export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }: { projects: Project[], storageKey?: string }) => {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const saved = sessionStorage.getItem(storageKey)
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  });
   const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
@@ -344,7 +350,11 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     switchView(viewMode);
   }, [viewMode, switchView]);
 
-  const handleToggle = (id: string) => {
+  const [buttonPos, setButtonPos] = useState<{ x: number; y: number } | null>(null);
+  const [pinned, setPinned] = useState(false);
+
+  const handleToggle = (id: string, x: number, y: number) => {
+    if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -377,24 +387,35 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     }, 300);
   };
 
+  useEffect(() => {
+    try { sessionStorage.setItem(storageKey, JSON.stringify([...expandedIds])) } catch {}
+  }, [expandedIds, storageKey]);
+
+  useEffect(() => {
+    const handler = () => {
+      setExpandedIds(new Set())
+      try { sessionStorage.removeItem(storageKey) } catch {}
+    }
+    window.addEventListener('nsm-reset', handler);
+    return () => window.removeEventListener('nsm-reset', handler);
+  }, [storageKey]);
+
   const anyExpanded = expandedIds.size > 0 && displayMode === 'list';
 
-  const [controlBottom, setControlBottom] = useState(24);
+  const controlRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const update = () => {
-      const footer = document.getElementById('site-footer');
-      if (!footer) return;
-      const footerTop = footer.getBoundingClientRect().top;
-      setControlBottom(prev => {
-        if (prev === 24 && footerTop < window.innerHeight - 10) return footer.offsetHeight + 24;
-        if (prev !== 24 && footerTop > window.innerHeight + 10) return 24;
-        return prev;
-      });
+    const handler = (e: MouseEvent) => {
+      if (pinned) return;
+      const target = e.target as Element;
+      if (target.closest('[data-exclude-pin]')) return;
+      if (document.getElementById('site-footer')?.contains(target)) return;
+      if (controlRef.current?.contains(target)) return;
+      setButtonPos({ x: e.clientX, y: e.clientY });
     };
-    window.addEventListener('scroll', update, { passive: true });
-    update();
-    return () => window.removeEventListener('scroll', update);
-  }, []);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [pinned]);
 
   return (
     <LayoutGroup>
@@ -406,7 +427,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
               key={project.id}
               project={project}
               isExpanded={expandedIds.has(project.id)}
-              onToggle={() => handleToggle(project.id)}
+              onToggle={(x, y) => handleToggle(project.id, x, y)}
               layoutId={project.id}
               scrollMode={scrollMode}
             />
@@ -442,20 +463,26 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
       </div>
     </div>
 
-    {/* 하단 고정 컨트롤 — 커버 중앙 X, 뷰포트 하단 */}
-    {/* 하단 고정 컨트롤 — 커버 중앙 X, 뷰포트 하단 */}
+    {/* 스크롤 컨트롤 — 클릭 위치에 fixed 표시 */}
     <div
-      className="flex fixed -translate-x-1/2 z-40 flex-col items-center gap-3 "
-      style={{ left: 'calc(var(--margin-w) + var(--photo-w) / 2)', bottom: controlBottom }}
+      ref={controlRef}
+      data-exclude-pin
+      className="flex fixed z-40 flex-col items-center"
+      style={{
+        left: buttonPos ? buttonPos.x : 0,
+        top: buttonPos ? buttonPos.y : 0,
+        transform: 'translate(-50%, -50%)',
+        transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1), top 0.5s cubic-bezier(0.4,0,0.2,1)',
+      }}
     >
-      {/* 스크롤 방향 토글 — 데스크탑 + 확장시만 노출 */}
+      {/* 핀 — 데스크탑 전용 */}
       <button
-        onClick={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
-        className={`hidden md:flex transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
-        aria-label="스크롤 방향 전환"
+        onClick={() => setPinned(p => !p)}
+        className="hidden md:flex p-1"
+        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))', opacity: pinned ? 1 : 0.4 }}
+        aria-label="위치 고정"
       >
-        <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
+        <Pin size={16} style={{ transform: pinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 0.2s' }} />
       </button>
       {/* 뷰 전환 — 데스크탑 전용 */}
       <button
@@ -465,6 +492,15 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
         aria-label="뷰 전환"
       >
         {viewMode === 'list' ? <Grid2X2 size={20} /> : <List size={20} />}
+      </button>
+      {/* 스크롤 방향 토글 — 데스크탑 + 확장시만 노출 */}
+      <button
+        onClick={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
+        className={`hidden md:flex transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
+        aria-label="스크롤 방향 전환"
+      >
+        <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
       </button>
     </div>
     </LayoutGroup>
