@@ -7,6 +7,20 @@ import Image from 'next/image';
 import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
+import { List, Grid2X2 } from 'lucide-react';
+
+const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
+  <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    {/* 휠 — 세로 타원, 중심 (22,22) */}
+    <rect x="15" y="12" width="14" height="20" rx="7" />
+    <line x1="22" y1="16" x2="22" y2="20" />
+    {/* 꺾쇠 — 세로 모드시 90도 회전 */}
+    <g transform={vertical ? 'rotate(90, 22, 22)' : undefined}>
+      <polyline points="10,16 4,22 10,28" />
+      <polyline points="34,16 40,22 34,28" />
+    </g>
+  </svg>
+);
 
 const EXPAND_DURATION = 1500; // ms — 열기/닫기 애니메이션 속도
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
@@ -33,9 +47,10 @@ interface ProjectRowProps {
   isExpanded: boolean;
   onToggle: () => void;
   layoutId: string;
+  scrollMode: 'horizontal' | 'vertical';
 }
 
-const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps) => {
+const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: ProjectRowProps) => {
   const { language } = useLanguage();
   const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -88,19 +103,22 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
       return;
     }
     const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 0.3) {
+      if (scrollMode === 'horizontal') {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY + e.deltaX;
+      } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 0.3) {
         e.preventDefault();
         el.scrollLeft += e.deltaX * 1.5;
       }
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [isExpanded]);
+  }, [isExpanded, scrollMode]);
 
   return (
     <div
       id={`project-${project.id}`}
-      className="w-full mx-auto flex flex-col items-center mb-[5px]"
+      className="relative w-full mx-auto flex flex-col items-center mb-[5px]"
       style={{ maxWidth: MAX_CONTAINER_WIDTH }}
     >
       {/* 
@@ -265,13 +283,14 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
             isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }} />
       </div>
+
     </div>
   );
 };
 
 export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const { viewMode, setViewMode } = useViewMode();
+  const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
   const savedExpandedIds = useRef<Set<string>>(new Set());
@@ -358,6 +377,25 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
     }, 300);
   };
 
+  const anyExpanded = expandedIds.size > 0 && displayMode === 'list';
+
+  const [controlBottom, setControlBottom] = useState(24);
+  useEffect(() => {
+    const update = () => {
+      const footer = document.getElementById('site-footer');
+      if (!footer) return;
+      const footerTop = footer.getBoundingClientRect().top;
+      setControlBottom(prev => {
+        if (prev === 24 && footerTop < window.innerHeight - 10) return footer.offsetHeight + 24;
+        if (prev !== 24 && footerTop > window.innerHeight + 10) return 24;
+        return prev;
+      });
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
     <LayoutGroup>
     <div className="w-full relative flex flex-col items-center">
@@ -370,6 +408,7 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
               isExpanded={expandedIds.has(project.id)}
               onToggle={() => handleToggle(project.id)}
               layoutId={project.id}
+              scrollMode={scrollMode}
             />
           ))
         ) : (
@@ -401,6 +440,32 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
           </div>
         )}
       </div>
+    </div>
+
+    {/* 하단 고정 컨트롤 — 커버 중앙 X, 뷰포트 하단 */}
+    {/* 하단 고정 컨트롤 — 커버 중앙 X, 뷰포트 하단 */}
+    <div
+      className="flex fixed -translate-x-1/2 z-40 flex-col items-center gap-3 "
+      style={{ left: 'calc(var(--margin-w) + var(--photo-w) / 2)', bottom: controlBottom }}
+    >
+      {/* 스크롤 방향 토글 — 데스크탑 + 확장시만 노출 */}
+      <button
+        onClick={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
+        className={`hidden md:flex transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
+        aria-label="스크롤 방향 전환"
+      >
+        <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
+      </button>
+      {/* 뷰 전환 — 데스크탑 전용 */}
+      <button
+        onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+        className="hidden md:flex p-1"
+        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
+        aria-label="뷰 전환"
+      >
+        {viewMode === 'list' ? <Grid2X2 size={20} /> : <List size={20} />}
+      </button>
     </div>
     </LayoutGroup>
   );

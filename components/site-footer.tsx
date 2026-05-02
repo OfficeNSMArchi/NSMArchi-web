@@ -7,7 +7,7 @@ export function SiteFooter() {
   const { t } = useLanguage()
 
   return (
-    <footer className="border-t border-border bg-muted/30 py-6">
+    <footer id="site-footer" className="border-t border-border bg-muted/30 py-6">
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-6 md:grid-cols-3 md:items-start">
           <div>

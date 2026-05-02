@@ -139,14 +139,14 @@ export function SiteHeader() {
             </div>
           </div>
 
-          {/* 오른쪽 — 뷰 토글 (홈만) */}
+          {/* 오른쪽 — 모바일 전용 뷰 토글 */}
           {isHome && (
             <button
               onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="뷰 전환"
             >
-              {viewMode === 'list' ? <List size={18} /> : <Grid2X2 size={18} />}
+              {viewMode === 'list' ? <Grid2X2 size={18} /> : <List size={18} />}
             </button>
           )}
         </div>
