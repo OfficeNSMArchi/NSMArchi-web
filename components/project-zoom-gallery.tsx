@@ -1,21 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
 import { Project } from '@/types/project';
 import Image from 'next/image';
 import { useLanguage } from '@/lib/language-context';
-import { Grid2X2, List } from 'lucide-react';
+import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
+import { useViewMode } from '@/lib/view-mode-context';
 
 const EXPAND_DURATION = 1500; // ms — 열기/닫기 애니메이션 속도
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
+const GRID_TO_LIST_SCROLL_DURATION = 2500; // ms — 그리드→리스트 전환 후 해당 프로젝트로 스크롤 속도
 const TEXT_PADDING = 'p-3 md:p-8'; // 텍스트 슬라이드 안쪽 여백
 
-// 레이아웃 비율 — 커버/슬라이드 너비와 좌우 여백은 함께 조정해야 함
-// 닫힌 상태 중앙정렬: MARGIN_W*2 + PHOTO_W = 100% 이면 완벽 중앙
+// 레이아웃 비율 — globals.css의 --photo-w, --margin-w 와 단일 소스로 연동
+// 닫힌 상태 중앙정렬: --margin-w*2 + --photo-w = 100% 이면 완벽 중앙
 const MAX_CONTAINER_WIDTH = '1920px';
-const PHOTO_W = 'w-[70%] landscape:w-[50%] md:w-[35%] min-w-[70%] landscape:min-w-[50%] md:min-w-[35%] max-w-[70%] landscape:max-w-[50%] md:max-w-[35%]';
-const MARGIN_W = 'w-[15%] md:w-[25%] min-w-[15%] md:min-w-[25%] max-w-[15%] md:max-w-[25%]';
+const PHOTO_STYLE = { width: 'var(--photo-w)', minWidth: 'var(--photo-w)', maxWidth: 'var(--photo-w)' };
+const MARGIN_STYLE = { width: 'var(--margin-w)', minWidth: 'var(--margin-w)', maxWidth: 'var(--margin-w)' };
+const TEXT_W_RATIO = 0.7; // 텍스트 블록 너비 = --photo-w * 이 비율
+const TEXT_STYLE = { width: `calc(var(--photo-w) * ${TEXT_W_RATIO})`, minWidth: `calc(var(--photo-w) * ${TEXT_W_RATIO})`, maxWidth: `calc(var(--photo-w) * ${TEXT_W_RATIO})` };
 
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
 const FONT_TITLE        = 'clamp(0.4rem, 3cqw, 12pt)';
@@ -36,15 +40,28 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
   const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const isPointerDown = useRef(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
+  const dragStartScrollLeft = useRef(0);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     dragStartPos.current = { x: e.clientX, y: e.clientY };
+    dragStartScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
     isDragging.current = false;
+    isPointerDown.current = true;
+    if (isExpanded) (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (Math.abs(e.clientX - dragStartPos.current.x) > 5 || Math.abs(e.clientY - dragStartPos.current.y) > 5)
+    if (!isPointerDown.current || !isExpanded) return;
+    const dx = e.clientX - dragStartPos.current.x;
+    const dy = e.clientY - dragStartPos.current.y;
+    if (isExpanded && !isDragging.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5))
       isDragging.current = true;
+    if (isDragging.current && scrollRef.current)
+      scrollRef.current.scrollLeft = dragStartScrollLeft.current - dx;
+  };
+  const handlePointerUp = () => {
+    isPointerDown.current = false;
   };
   const handleContainerClick = () => {
     if (isExpanded && !isDragging.current) onToggle();
@@ -71,8 +88,10 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
       return;
     }
     const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      el.scrollLeft += e.deltaY + e.deltaX;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 0.3) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaX * 1.5;
+      }
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
@@ -103,14 +122,15 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onClick={handleContainerClick}
       >
         {/* Left Content (Margin Space: 15% on mobile, 25% on desktop) */}
-        <div 
-          className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${MARGIN_W} ${
+        <div
+          className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}
-          style={{ transitionDuration: `${EXPAND_DURATION}ms` }}
+          style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}
         >
           <div
             className="absolute inset-0 flex flex-col items-end justify-center text-right space-y-4 md:space-y-6 px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
@@ -138,12 +158,12 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
         <motion.div
           layoutId={layoutId}
           transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
-          className={`shrink-0 relative aspect-[4/3] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${PHOTO_W} ${
+          className={`shrink-0 relative aspect-[4/3] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded
               ? 'shadow-xl'
               : 'cursor-pointer shadow-sm hover:shadow-md hover:opacity-95'
           }`}
-          style={{ transitionDuration: `${EXPAND_DURATION}ms` }}
+          style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}
           onClick={handleCoverClick}
         >
            <Image
@@ -171,9 +191,9 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
         {(!project.content || project.content.length === 0) ? (
           <>
             {/* Description in the right margin space (15% md:25%) */}
-            <div className={`shrink-0 relative ${MARGIN_W} h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+            <div className={`shrink-0 relative h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
               isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-            }`} style={{ transitionDuration: `${EXPAND_DURATION}ms` }}>
+            }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
               <div
                 className="absolute inset-0 flex flex-col justify-center px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
                 style={{ containerType: 'inline-size' }}
@@ -189,9 +209,9 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
             
             {/* Render additional images if any */}
             {project.images?.filter(img => img !== project.image).map((img, i) => (
-              <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 ${PHOTO_W} transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`} style={{ transitionDuration: `${EXPAND_DURATION}ms` }}>
+              }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
                   <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" />
               </div>
             ))}
@@ -202,9 +222,12 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
             {project.content
               .filter(block => !(block.type === 'image' && block.src === project.image))
               .map((block, i) => (
-              <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative ${PHOTO_W} transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`} style={{ transitionDuration: `${EXPAND_DURATION}ms` }}>
+              }`} style={{
+                ...(block.type === 'text' ? TEXT_STYLE : PHOTO_STYLE),
+                transitionDuration: `${EXPAND_DURATION}ms`,
+              }}>
                   <div className="absolute inset-0 flex flex-col justify-center overflow-hidden" style={{ containerType: 'inline-size' }}>
                     {block.type === 'text' && (
                       <div className={`space-y-4 md:space-y-6 ${TEXT_PADDING}`}>
@@ -238,9 +261,9 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
         )}
         
         {/* Spacer at the end for comfortable scrolling */}
-           <div className={`shrink-0 h-full ${MARGIN_W} transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+           <div className={`shrink-0 h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`} style={{ transitionDuration: `${EXPAND_DURATION}ms` }} />
+          }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }} />
       </div>
     </div>
   );
@@ -248,39 +271,59 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId }: ProjectRowProps
 
 export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const { viewMode, setViewMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
 
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 640px)');
-    const handle = (e: MediaQueryListEvent) => {
-      if (!e.matches) switchView('list');
-    };
-    mq.addEventListener('change', handle);
-    if (!mq.matches) switchView('list');
-    return () => mq.removeEventListener('change', handle);
-  }, []);
 
-  const switchView = (mode: 'list' | 'grid') => {
+  const switchView = useCallback((mode: 'list' | 'grid') => {
     if (mode === displayMode) return;
     if (mode === 'grid') {
+      const centerY = window.innerHeight / 2;
+      let closestId: string | null = null;
+      let closestDist = Infinity;
+      projects.forEach(p => {
+        const el = document.getElementById(`project-${p.id}`);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const dist = Math.abs(rect.top + rect.height / 2 - centerY);
+        if (dist < closestDist) { closestDist = dist; closestId = p.id; }
+      });
       savedExpandedIds.current = expandedIds;
       setExpandedIds(new Set());
       setDisplayMode(mode);
-      setViewMode(mode);
+      setTimeout(() => {
+        if (!closestId) return;
+        const el = document.getElementById(`project-${closestId}`);
+        if (!el) return;
+        const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+        const startY = window.scrollY;
+        const diff = targetY - startY;
+        const duration = 1500;
+        const startTime = performance.now();
+        const step = (now: number) => {
+          const t = Math.min((now - startTime) / duration, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          window.scrollTo(0, startY + diff * ease);
+          if (t < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, 1200);
     } else {
       setFading(true);
       setTimeout(() => {
         setDisplayMode(mode);
-        setViewMode(mode);
         setFading(false);
         setTimeout(() => setExpandedIds(savedExpandedIds.current), 600);
       }, 300);
     }
-  };
+  }, [displayMode, expandedIds, projects]);
+
+  useEffect(() => {
+    switchView(viewMode);
+  }, [viewMode, switchView]);
 
   const handleToggle = (id: string) => {
     setExpandedIds(prev => {
@@ -291,29 +334,34 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
   };
 
   const handleGridClick = (id: string) => {
-    setViewMode('list');
-    setDisplayMode('list');
-    setExpandedIds(prev => new Set(prev).add(id));
+    setFading(true);
     setTimeout(() => {
-      document.getElementById(`project-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+      setViewMode('list');
+      setDisplayMode('list');
+      setExpandedIds(prev => new Set(prev).add(id));
+      setFading(false);
+      setTimeout(() => {
+        const el = document.getElementById(`project-${id}`);
+        if (!el) return;
+        const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+        const startY = window.scrollY;
+        const diff = targetY - startY;
+        const startTime = performance.now();
+        const step = (now: number) => {
+          const t = Math.min((now - startTime) / GRID_TO_LIST_SCROLL_DURATION, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          window.scrollTo(0, startY + diff * ease);
+          if (t < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }, 100);
+    }, 300);
   };
 
   return (
     <LayoutGroup>
     <div className="w-full relative flex flex-col items-center">
-      {/* View Mode Toggle */}
-      <div className="hidden sm:block fixed right-6 z-40" style={{ top: 'calc(var(--header-h, 64px) + 8px)' }}>
-        <button
-          onClick={() => switchView(viewMode === 'list' ? 'grid' : 'list')}
-          className="p-2 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-gray-100 text-gray-600 hover:text-black transition-colors"
-          aria-label="Toggle view"
-        >
-          {viewMode === 'list' ? <Grid2X2 size={20} /> : <List size={20} />}
-        </button>
-      </div>
-
-      <div className="w-full flex flex-col items-center pb-[20px]" style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}>
+<div className="w-full flex flex-col items-center pb-[20px]" style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}>
         {displayMode === 'list' ? (
           projects.map((project) => (
             <ProjectRow
@@ -325,12 +373,13 @@ export const ProjectZoomGallery = ({ projects }: { projects: Project[] }) => {
             />
           ))
         ) : (
-          <div className="w-full max-w-screen-2xl px-6 md:px-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pb-[100px] animate-in fade-in duration-500">
+          <div className={`w-full grid grid-cols-2 lg:grid-cols-3 gap-2 pb-[100px] animate-in fade-in duration-500 ${LAYOUT_MAX_W} ${LAYOUT_PX}`}>
             {projects.map((project) => {
               const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
               return (
                 <motion.button
                   key={project.id}
+                  id={`project-${project.id}`}
                   layoutId={project.id}
                   transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
                   onClick={() => handleGridClick(project.id)}

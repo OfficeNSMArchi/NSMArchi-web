@@ -19,8 +19,8 @@ export interface Project {
     description: string;
     descriptionKo: string;
     content?: Array<
-      | { type: "image"; src: string; alt?: string }
-      | { type: "text"; title?: { ko: string; en: string }; body: { ko: string; en: string } }
+      | { type: "image"; src: string; alt?: string; }
+      | { type: "text"; title?: { ko: string; en: string }; body: { ko: string; en: string }; }
     >;
     companies: Array<"ndb" | "snp" | "metalogic">;
     metalogicCategory?: "practice" | "concept" | "research" | "academic";

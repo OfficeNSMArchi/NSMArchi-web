@@ -139,6 +139,22 @@
 }
 
 /* Reusable utility classes for horizontal scrolling areas */
+/* 갤러리 레이아웃 기준값 — project-zoom-gallery.tsx 상수와 단일 소스 */
+:root {
+  --photo-w: 70%;
+  --margin-w: 15%;
+}
+@media (orientation: landscape) and (max-width: 767px) {
+  :root { --photo-w: 50%; --margin-w: 15%; }
+}
+@media (min-width: 768px) {
+  :root { --photo-w: 35%; --margin-w: 25%; }
+}
+
+@layer base {
+  img { user-select: none; -webkit-user-drag: none; }
+}
+
 @layer utilities {
   .hide-scrollbar {
     -ms-overflow-style: none !important;

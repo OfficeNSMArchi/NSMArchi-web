@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { LanguageProvider } from '@/lib/language-context' 
+import { LanguageProvider } from '@/lib/language-context'
+import { ViewModeProvider } from '@/lib/view-mode-context'
 
 export const viewport = {
   width: "device-width",
@@ -42,7 +43,9 @@ export default function RootLayout({
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <LanguageProvider>
-          {children}
+          <ViewModeProvider>
+            {children}
+          </ViewModeProvider>
         </LanguageProvider>
         <Analytics />
       </body>
