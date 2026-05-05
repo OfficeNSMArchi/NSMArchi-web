@@ -51,10 +51,33 @@ function TextBlock({ block, language, isExpanded }: {
 }) {
   const [modules, setModules] = useState(1);
   const [settled, setSettled] = useState(false);
+  const [measureKey, setMeasureKey] = useState(0); // 강제 재측정 트리거
   const innerRef = useRef<HTMLDivElement>(null);
 
   // 언어 바뀌면 처음부터 재계산
   useEffect(() => { setModules(1); setSettled(false); }, [language]);
+
+  // 뷰포트 변화(브라우저 줌, 창 크기) 시 재측정
+  // 부모 row가 transition-all로 width를 1500ms 애니메이션 → 즉시 측정시 mid-transition 값 잡힘
+  // → 즉시 한 번, transition 끝난 후 한 번 더 측정
+  useEffect(() => {
+    let timeoutId: number;
+    const handler = () => {
+      setModules(1);
+      setSettled(false);
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        setModules(1);
+        setSettled(false);
+        setMeasureKey(k => k + 1); // 같은 값이어도 강제 재측정
+      }, EXPAND_DURATION + 100);
+    };
+    window.addEventListener('resize', handler);
+    return () => {
+      window.removeEventListener('resize', handler);
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   useEffect(() => {
     if (settled) return;
@@ -69,19 +92,21 @@ function TextBlock({ block, language, isExpanded }: {
       }
     });
     return () => cancelAnimationFrame(id);
-  }, [modules, settled, language]);
+  }, [modules, settled, language, measureKey]);
 
   const w = `calc(var(--photo-w) * ${TEXT_MODULE_RATIO * modules})`;
-  // 측정 중: columnCount=1 (정확한 scrollHeight 측정 위해)
-  // 측정 완료: modules≥2이면 2열 적용
-  const columnCount = settled && modules >= 2 ? 2 : 1;
+  // 측정 중: 1열 + 자연 흐름 (scrollHeight 정확 측정)
+  // 측정 완료: 최종 columnCount + column-fill: auto + height 100%
+  const columnStyle: React.CSSProperties = settled
+    ? { columnCount: modules >= 2 ? 2 : 1, columnGap: '2rem', columnFill: 'auto', height: '100%' }
+    : { columnCount: 1, columnGap: '2rem' };
 
   return (
     <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
       isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
     }`} style={{ width: w, minWidth: w, transitionDuration: `${EXPAND_DURATION}ms` }}>
       <div ref={innerRef} className="absolute inset-0 overflow-hidden">
-        <div className={`${TEXT_PADDING}`} style={{ columnCount, columnGap: '2rem', columnFill: 'auto', height: '100%' }}>
+        <div className={`${TEXT_PADDING}`} style={columnStyle}>
           {block.title && (
             <h3 className="font-bold uppercase tracking-tight break-inside-avoid"
                 style={{ fontSize: FONT_BLOCK_TITLE }}>
@@ -327,13 +352,14 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
 };
 
 export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }: { projects: Project[], storageKey?: string }) => {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
+  // 서버/클라 hydration 일치 위해 빈 상태로 시작, 마운트 후 sessionStorage 동기화
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(storageKey)
-      return saved ? new Set(JSON.parse(saved)) : new Set()
-    } catch { return new Set() }
-  });
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) setExpandedIds(new Set(JSON.parse(saved)));
+    } catch {}
+  }, [storageKey]);
   const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
