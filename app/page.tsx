@@ -1,10 +1,6 @@
-"use client"
-
-import { NsmSiteHeader } from "@/components/nsm-site-header"
-import { NsmCategoryProvider, useNsmCategory } from "@/components/nsm-category-provider"
-import { SiteFooter } from "@/components/site-footer"
+import { NsmCategoryProvider } from "@/components/nsm-category-provider"
 import { allProjects } from "@/data/projects/index"
-import { ProjectZoomGallery } from "@/components/project-zoom-gallery"
+import { HomeContent } from "./home-content"
 
 const homeProjects = allProjects
   .filter((p) => p.showOnHome)
@@ -15,29 +11,10 @@ const homeProjects = allProjects
     return Number(b.year) - Number(a.year)
   })
 
-function HomeContent() {
-  const { selectedCategory } = useNsmCategory()
-  const projects = selectedCategory === "all"
-    ? homeProjects
-    : homeProjects.filter((p) => (p as any).nsmCategory === selectedCategory)
-
-  return (
-    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 64px)' }}>
-      <NsmSiteHeader />
-      <main>
-        <section className="py-8 md:py-12">
-          <ProjectZoomGallery storageKey="nsm-home" projects={projects} />
-        </section>
-      </main>
-      <SiteFooter />
-    </div>
-  )
-}
-
 export default function HomePage() {
   return (
     <NsmCategoryProvider>
-      <HomeContent />
+      <HomeContent projects={homeProjects} />
     </NsmCategoryProvider>
   )
 }

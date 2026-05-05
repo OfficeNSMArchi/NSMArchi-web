@@ -32,15 +32,73 @@ const TEXT_PADDING = 'p-3 md:p-8'; // 텍스트 슬라이드 안쪽 여백
 const MAX_CONTAINER_WIDTH = '1920px';
 const PHOTO_STYLE = { width: 'var(--photo-w)', minWidth: 'var(--photo-w)', maxWidth: 'var(--photo-w)' };
 const MARGIN_STYLE = { width: 'var(--margin-w)', minWidth: 'var(--margin-w)', maxWidth: 'var(--margin-w)' };
-const TEXT_W_RATIO = 0.7; // 텍스트 블록 너비 = --photo-w * 이 비율
-const TEXT_STYLE = { width: `calc(var(--photo-w) * ${TEXT_W_RATIO})`, minWidth: `calc(var(--photo-w) * ${TEXT_W_RATIO})`, maxWidth: `calc(var(--photo-w) * ${TEXT_W_RATIO})` };
+// ── 텍스트 모듈 설정 (여기서 조정) ──────────────────────────────
+const TEXT_MODULE_RATIO = 0.7;                          // 1모듈 너비 = --photo-w × 이 값
+const TEXT_MAX_MODULES  = 3;                            // 최대 모듈 수
+const FONT_BLOCK_TITLE  = 'clamp(0.5rem, 0.75vw, 14pt)'; // vw = 뷰포트 기준, 컨테이너 크기와 무관
+const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바뀌어도 폰트 고정
+// ─────────────────────────────────────────────────────────────────
 
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
-const FONT_TITLE        = 'clamp(0.4rem, 3cqw, 12pt)';
-const FONT_META         = 'clamp(0.3rem, 2.5cqw, 10pt)';
-const FONT_DESC         = 'clamp(0.3rem, 2.5cqw, 8pt)';
-const FONT_BLOCK_TITLE  = 'clamp(0.2rem, 3cqw, 16pt)';  // 콘텐츠 블록 제목
-const FONT_BLOCK_BODY   = 'clamp(0.2rem, 2.5cqw, 12pt)';  // 콘텐츠 블록 본문
+const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
+const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
+const FONT_DESC  = 'clamp(0.3rem, 2.5cqw, 8pt)';
+
+function TextBlock({ block, language, isExpanded }: {
+  block: { type: 'text'; title?: { ko: string; en: string }; body?: { ko: string; en: string } };
+  language: string;
+  isExpanded: boolean;
+}) {
+  const [modules, setModules] = useState(1);
+  const [settled, setSettled] = useState(false);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  // 언어 바뀌면 처음부터 재계산
+  useEffect(() => { setModules(1); setSettled(false); }, [language]);
+
+  useEffect(() => {
+    if (settled) return;
+    const el = innerRef.current;
+    if (!el) return;
+    // 폰트가 vw 고정이므로 modules가 바뀌어도 폰트 불변 → 순환참조 없음
+    const id = requestAnimationFrame(() => {
+      if (el.scrollHeight > el.clientHeight + 2 && modules < TEXT_MAX_MODULES) {
+        setModules(m => m + 1); // 너비 확장
+      } else {
+        setSettled(true); // 측정 완료
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [modules, settled, language]);
+
+  const w = `calc(var(--photo-w) * ${TEXT_MODULE_RATIO * modules})`;
+  // 측정 중: columnCount=1 (정확한 scrollHeight 측정 위해)
+  // 측정 완료: modules≥2이면 2열 적용
+  const columnCount = settled && modules >= 2 ? 2 : 1;
+
+  return (
+    <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+      isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+    }`} style={{ width: w, minWidth: w, transitionDuration: `${EXPAND_DURATION}ms` }}>
+      <div ref={innerRef} className="absolute inset-0 overflow-hidden">
+        <div className={`${TEXT_PADDING}`} style={{ columnCount, columnGap: '2rem', columnFill: 'auto', height: '100%' }}>
+          {block.title && (
+            <h3 className="font-bold uppercase tracking-tight break-inside-avoid"
+                style={{ fontSize: FONT_BLOCK_TITLE }}>
+              {language === 'ko' ? block.title.ko : block.title.en}
+            </h3>
+          )}
+          {block.body && (
+            <p className="text-gray-600 leading-relaxed whitespace-pre-wrap font-light"
+               style={{ fontSize: FONT_BLOCK_BODY }}>
+              {language === 'ko' ? block.body.ko : block.body.en}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ProjectRowProps {
   project: Project;
@@ -239,42 +297,22 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
             {/* When content exists, skip description and simple images, just render content blocks */}
             {project.content
               .filter(block => !(block.type === 'image' && block.src === project.image))
-              .map((block, i) => (
-              <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`} style={{
-                ...(block.type === 'text' ? TEXT_STYLE : PHOTO_STYLE),
-                transitionDuration: `${EXPAND_DURATION}ms`,
-              }}>
-                  <div className="absolute inset-0 flex flex-col justify-center overflow-hidden" style={{ containerType: 'inline-size' }}>
-                    {block.type === 'text' && (
-                      <div className={`space-y-4 md:space-y-6 ${TEXT_PADDING}`}>
-                        {block.title && (
-                          <h3
-                            className="font-bold uppercase tracking-tight"
-                            style={{ fontSize: FONT_BLOCK_TITLE }}
-                          >
-                            {language === 'ko' ? block.title.ko : block.title.en}
-                          </h3>
-                        )}
-                        {block.body && (
-                          <p
-                            className="text-gray-600 leading-relaxed whitespace-pre-wrap font-light"
-                            style={{ fontSize: FONT_BLOCK_BODY }}
-                          >
-                            {language === 'ko' ? block.body.ko : block.body.en}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {block.type === 'image' && (
+              .map((block, i) => {
+                if (block.type === 'text') {
+                  return <TextBlock key={`content-${i}`} block={block} language={language} isExpanded={isExpanded} />;
+                }
+                return (
+                  <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                    <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
                       <div className="relative w-full h-full">
-                          <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" />
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" />
                       </div>
-                    )}
+                    </div>
                   </div>
-              </div>
-            ))}
+                );
+              })}
           </>
         )}
         

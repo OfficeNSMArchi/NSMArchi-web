@@ -1,5 +1,3 @@
-"use client";
-
 import React from 'react';
 import { allProjects } from '@/data/projects';
 import { ProjectZoomGallery } from '@/components/project-zoom-gallery';
