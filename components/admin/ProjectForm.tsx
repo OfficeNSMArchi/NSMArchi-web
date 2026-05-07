@@ -350,7 +350,7 @@ export default function ProjectForm() {
         <p className="text-sm text-gray-500">이 페이지는 데스크탑 환경에서만 지원됩니다.</p>
       </div>
     </div>
-    <div className="hidden lg:flex min-h-screen bg-white flex-col">
+    <div className="hidden lg:block min-h-screen bg-white">
 
       {/* ── 창 크기 경고 배너 ── */}
       {isNarrow && (
@@ -445,7 +445,7 @@ export default function ProjectForm() {
       </div>
 
       {/* ── 폼 + MDX (나머지 높이 채움) ── */}
-      <div className="flex flex-1">
+      <div className="flex">
 
         {/* 폼 */}
         <div className="flex-1 p-6 space-y-8">
