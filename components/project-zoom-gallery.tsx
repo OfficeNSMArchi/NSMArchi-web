@@ -421,13 +421,20 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
     if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        window.history.pushState(null, '', window.location.pathname);
+      } else {
+        next.add(id);
+        window.history.pushState(null, '', `/projects/${id}`);
+      }
       return next;
     });
   };
 
   const handleGridClick = (id: string) => {
     setFading(true);
+    window.history.pushState(null, '', `/projects/${id}`);
     setTimeout(() => {
       setViewMode('list');
       setDisplayMode('list');

@@ -142,7 +142,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
             const slideBody = slide.body ? t(slide.body.ko, slide.body.en) : undefined
 
             return (
-              <div key={`text-${index}`} data-slide="text" className="relative flex-none h-full w-[250px] max-h-full min-h-0 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800">
+              <div key={`text-${index}`} data-slide="text" className="relative flex-none h-full w-[clamp(160px,18vw,280px)] max-h-full min-h-0 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800">
                 <div className="pointer-events-auto absolute right-4 top-4 bottom-4 z-10 hidden md:flex flex-col justify-between">
                   <button type="button" className="grid h-8 w-8 place-items-center text-zinc-300 hover:text-zinc-400" onClick={(e) => {
                     const scroller = e.currentTarget.closest('[data-slide="text"]')?.querySelector('[data-text-scroller="true"]') as HTMLDivElement | null
@@ -167,7 +167,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 <div
                   ref={index === firstTextIndex ? textPanelRef : undefined}
                   data-text-scroller="true"
-                  className={`h-full min-h-0 overflow-y-hidden p-16 pr-20 ${isCover ? "text-right" : "text-left"}`}
+                  className={`h-full min-h-0 overflow-y-hidden ${isCover ? "text-right" : "text-left"}`}
+                  style={{ padding: "clamp(1rem,6vh,5rem) clamp(1.5rem,7vh,5rem) clamp(1rem,6vh,5rem) clamp(1rem,6vh,5rem)" }}
                   onPointerDown={handleTextPointerDown}
                   onPointerMove={handleTextPointerMove}
                   onPointerUp={endTextDrag}
@@ -178,9 +179,9 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                   {/* 1. 표지 슬라이드: 제목과 제원만 노출 */}
                   {isCover ? (
                     <>
-                      <p className="text-[10px] font-bold text-blue-600 mb-4 uppercase tracking-[0.3em]">{companyLabel}</p>
-                      <h2 className="text-2xl md:text-xl font-black tracking-tighter leading-tight mb-10">{mainTitle}</h2>
-                      <div className="mb-12 space-y-3 text-[11px] uppercase tracking-[0.2em] text-zinc-400 font-bold">
+                      <p className="font-bold text-blue-600 mb-4 uppercase tracking-[0.3em]" style={{ fontSize: "clamp(7px,1vh,11px)" }}>{companyLabel}</p>
+                      <h2 className="font-black tracking-tighter leading-tight mb-10" style={{ fontSize: "clamp(0.9rem,3vh,1.75rem)" }}>{mainTitle}</h2>
+                      <div className="mb-12 space-y-3 uppercase tracking-[0.2em] text-zinc-400 font-bold" style={{ fontSize: "clamp(7px,1.2vh,11px)" }}>
                         <p>{t(project.locationKo, project.location)}</p>
                         <p>{project.year}</p>
                         <p>{project.area}</p>
@@ -190,8 +191,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                   ) : (
                     /* 2. 일반 텍스트 슬라이드: 본문 설명글만 노출 */
                     <>
-                      {slideTitle && <h3 className="font-bold tracking-tight text-foreground/90 mb-4 text-xl">{slideTitle}</h3>}
-                      {slideBody && <p className="text-base md:text-[15px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-light whitespace-pre-wrap">{slideBody}</p>}
+                      {slideTitle && <h3 className="font-bold tracking-tight text-foreground/90 mb-4" style={{ fontSize: "clamp(0.8rem,2.5vh,1.25rem)" }}>{slideTitle}</h3>}
+                      {slideBody && <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: "clamp(0.65rem,1.8vh,0.95rem)" }}>{slideBody}</p>}
                     </>
                   )}
                 </div>

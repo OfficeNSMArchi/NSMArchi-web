@@ -60,6 +60,11 @@ export const defaultFormData: ProjectFormData = {
   content: [],
 };
 
+export const REQUIRED_FORM_FIELDS = new Set([
+  "id", "title", "titleKo", "location", "locationKo",
+  "client", "clientKo", "coverImage", "companies", "description", "descriptionKo",
+]);
+
 function escapeYamlString(str: string): string {
   if (!str) return '""';
   // multiline은 블록 스칼라로 처리하므로, 단일 라인용 이스케이프만

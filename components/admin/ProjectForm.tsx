@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ProjectFormData, defaultFormData, generateMdx } from "@/lib/generateMdx";
 import { parseMdx } from "@/lib/parseMdx";
+import { formToProject } from "@/lib/formToProject";
+import { ProjectDetailView } from "@/components/project-detail-view";
 import JSZip from "jszip";
 import { Lock, LockOpen } from "lucide-react";
 import ContentBlockEditor from "./ContentBlockEditor";
@@ -160,6 +162,13 @@ export default function ProjectForm() {
 
   const [newImage, setNewImage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [previewBlobUrls, setPreviewBlobUrls] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const map = new Map(uploadedFiles.map((f) => [f.name, URL.createObjectURL(f)]));
+    setPreviewBlobUrls(map);
+    return () => { map.forEach((url) => URL.revokeObjectURL(url)); };
+  }, [uploadedFiles]);
   const [loadMode, setLoadMode] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -214,13 +223,11 @@ export default function ProjectForm() {
       const { slug } = splitId(parsed.id);
       setIdSlug(slug);
       setSlugSync(false);
-      setData(parsed);
-      if (images) {
+      if (images && images.length > 0) {
+        parsed.images = images.map((f) => f.name);
         setUploadedFiles(images);
-        if (images.length > 0) {
-          parsed.images = images.map((f) => f.name);
-        }
       }
+      setData(parsed);
       setLoadMode(false);
       setPasteText("");
       setLoadError("");
@@ -326,11 +333,32 @@ export default function ProjectForm() {
     setShowDownloadMenu(false);
   }
 
-  function loadFromId(id: string) {
-    fetch(`/projects/${id}/${id}.mdx`)
-      .then((r) => r.text())
-      .then((text) => loadFromText(text))
-      .catch(() => alert(`${id}.mdx 를 불러오지 못했습니다.`));
+  async function loadFromId(id: string) {
+    try {
+      const text = await fetch(`/projects/${id}/${id}.mdx`).then((r) => r.text());
+      const parsed = parseMdx(text);
+
+      const toFetch = new Set<string>();
+      if (parsed.coverImage) toFetch.add(parsed.coverImage);
+      parsed.images.forEach((img) => img && toFetch.add(img));
+
+      const fetched: File[] = [];
+      await Promise.all(
+        [...toFetch].map(async (name) => {
+          try {
+            const resp = await fetch(`/projects/${id}/${name}`);
+            if (resp.ok) {
+              const blob = await resp.blob();
+              fetched.push(new File([blob], name, { type: blob.type }));
+            }
+          } catch {}
+        })
+      );
+
+      loadFromText(text, fetched.length > 0 ? fetched : undefined);
+    } catch {
+      alert(`${id}.mdx 를 불러오지 못했습니다.`);
+    }
   }
 
   function handleFileDrop(e: React.DragEvent) {
@@ -439,9 +467,9 @@ export default function ProjectForm() {
         </div>
       )}
 
-      {/* ── 미리보기 스트립 (전체 가로, 화면 높이 1/4) ── */}
-      <div className="h-[320px] border-b border-gray-200 bg-gray-50 shrink-0 flex items-center justify-center overflow-hidden">
-        <p className="text-sm text-gray-400">미리보기 — 준비 중</p>
+      {/* ── 미리보기 스트립 ── */}
+      <div className="h-[320px] border-b border-gray-200 shrink-0 overflow-hidden">
+        <ProjectDetailView project={formToProject(data, previewBlobUrls)} />
       </div>
 
       {/* ── 폼 + MDX (나머지 높이 채움) ── */}
