@@ -87,10 +87,17 @@ export default function ProjectForm() {
   const [slugSync, setSlugSync] = useState(false);
   const [existingProjects, setExistingProjects] = useState<{id: string; title: string; titleKo: string}[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"form" | "mdx">("form");
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [dirActive, setDirActive] = useState(true);
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsNarrow(window.innerWidth < 1280);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   useEffect(() => {
     function loadProjects() {
@@ -336,23 +343,37 @@ export default function ProjectForm() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <>
+    <div className="flex lg:hidden h-screen items-center justify-center bg-white px-8">
+      <div className="text-center">
+        <p className="text-lg font-medium text-gray-800 mb-2">데스크탑에서 사용하세요</p>
+        <p className="text-sm text-gray-500">이 페이지는 데스크탑 환경에서만 지원됩니다.</p>
+      </div>
+    </div>
+    <div className="hidden lg:flex h-screen overflow-hidden bg-white flex-col">
+
+      {/* ── 창 크기 경고 배너 ── */}
+      {isNarrow && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 shrink-0">
+          <p className="text-sm text-amber-700">창을 최대한 넓게 확장하면 더 편하게 사용할 수 있습니다.</p>
+        </div>
+      )}
 
       {/* ── 헤더 ── */}
-      <header className="border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0">
+      <header className="border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center justify-between gap-2 shrink-0 flex-wrap">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">새 프로젝트 등록</h1>
           <p className="text-xs text-gray-500 mt-0.5">폼을 작성하면 MDX 파일이 자동 생성됩니다</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => { setLoadMode(true); setLoadError(""); }}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="hidden lg:block px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             로컬에서 불러오기
           </button>
-          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+          <div className="hidden lg:flex items-center border border-gray-300 rounded-lg overflow-hidden">
             <button
               type="button"
               onClick={pickFolder}
@@ -382,7 +403,7 @@ export default function ProjectForm() {
               title={validationErrors.length > 0 ? validationErrors.map((e) => `${e} 누락`).join(", ") : undefined}
               className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors"
             >
-              다운로드 {data.id ? `${data.id}` : ""}  ▾
+              <span className="hidden lg:inline">다운로드 {data.id ? `${data.id}` : ""}  </span><span className="lg:hidden">다운로드</span> ▾
             </button>
             {showDownloadMenu && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-48">
@@ -403,23 +424,6 @@ export default function ProjectForm() {
                 </button>
               </div>
             )}
-          </div>
-          {/* 모바일 탭 */}
-          <div className="flex lg:hidden border border-gray-200 rounded-lg overflow-hidden text-sm">
-            <button
-              type="button"
-              onClick={() => setMobileTab("form")}
-              className={`px-4 py-2 ${mobileTab === "form" ? "bg-gray-900 text-white" : "hover:bg-gray-50"}`}
-            >
-              폼
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("mdx")}
-              className={`px-4 py-2 ${mobileTab === "mdx" ? "bg-gray-900 text-white" : "hover:bg-gray-50"}`}
-            >
-              MDX
-            </button>
           </div>
         </div>
       </header>
@@ -444,7 +448,7 @@ export default function ProjectForm() {
       <div className="flex flex-1 min-h-0">
 
         {/* 폼 */}
-        <div className={`flex-1 overflow-y-auto p-6 space-y-8 ${mobileTab === "mdx" ? "hidden lg:block" : ""}`}>
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
           {/* 1. 기본 정보 */}
           <section>
@@ -692,7 +696,7 @@ export default function ProjectForm() {
         </div>
 
         {/* MDX 미리보기 (우측 고정) */}
-        <div className={`w-full lg:w-[480px] xl:w-[560px] border-l border-gray-200 p-6 overflow-y-auto ${mobileTab === "form" ? "hidden lg:flex lg:flex-col" : "flex flex-col"}`}>
+        <div className="w-full lg:w-[480px] xl:w-[560px] border-l border-gray-200 p-6 overflow-y-auto flex flex-col">
           <MdxPreview mdx={mdx} projectId={data.id} errors={validationErrors} existingProjects={existingProjects} projectsLoaded={projectsLoaded} onLoadProject={loadFromId} />
         </div>
 
@@ -767,5 +771,6 @@ export default function ProjectForm() {
       )}
 
     </div>
+    </>
   );
 }
