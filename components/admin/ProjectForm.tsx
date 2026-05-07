@@ -341,6 +341,7 @@ export default function ProjectForm() {
       const toFetch = new Set<string>();
       if (parsed.coverImage) toFetch.add(parsed.coverImage);
       parsed.images.forEach((img) => img && toFetch.add(img));
+      parsed.content.forEach((block) => { if (block.type === "image" && block.src) toFetch.add(block.src); });
 
       const fetched: File[] = [];
       await Promise.all(
