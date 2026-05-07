@@ -350,7 +350,7 @@ export default function ProjectForm() {
         <p className="text-sm text-gray-500">이 페이지는 데스크탑 환경에서만 지원됩니다.</p>
       </div>
     </div>
-    <div className="hidden lg:flex h-screen overflow-hidden bg-white flex-col">
+    <div className="hidden lg:flex min-h-screen bg-white flex-col">
 
       {/* ── 창 크기 경고 배너 ── */}
       {isNarrow && (
@@ -445,10 +445,10 @@ export default function ProjectForm() {
       </div>
 
       {/* ── 폼 + MDX (나머지 높이 채움) ── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1">
 
         {/* 폼 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 p-6 space-y-8">
 
           {/* 1. 기본 정보 */}
           <section>
@@ -696,7 +696,7 @@ export default function ProjectForm() {
         </div>
 
         {/* MDX 미리보기 (우측 고정) */}
-        <div className="w-full lg:w-[480px] xl:w-[560px] border-l border-gray-200 p-6 overflow-y-auto flex flex-col">
+        <div className="w-full lg:w-[480px] xl:w-[560px] border-l border-gray-200 p-6 flex flex-col">
           <MdxPreview mdx={mdx} projectId={data.id} errors={validationErrors} existingProjects={existingProjects} projectsLoaded={projectsLoaded} onLoadProject={loadFromId} />
         </div>
 
