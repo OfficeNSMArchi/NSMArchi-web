@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ProjectFormData, defaultFormData, generateMdx } from "@/lib/generateMdx";
 import { parseMdx } from "@/lib/parseMdx";
 import { formToProject } from "@/lib/formToProject";
-import { ProjectDetailView } from "@/components/project-detail-view";
+import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
 import JSZip from "jszip";
 import { Lock, LockOpen } from "lucide-react";
 import ContentBlockEditor from "./ContentBlockEditor";
@@ -95,7 +95,7 @@ export default function ProjectForm() {
   const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
-    const update = () => setIsNarrow(window.innerWidth < 1280);
+    const update = () => { setIsNarrow(window.innerWidth < 1280); };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -160,6 +160,21 @@ export default function ProjectForm() {
     setShowDraftBanner(false);
   }
 
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [previewHovered, setPreviewHovered] = useState(false);
+  const [previewHeight, setPreviewHeight] = useState(420);
+  const previewResizeRef = useRef<{ active: boolean; startY: number; startH: number }>({ active: false, startY: 0, startH: 0 });
+
+  function handleResizeStart(e: React.PointerEvent) {
+    previewResizeRef.current = { active: true, startY: e.clientY, startH: previewHeight };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function handleResizeMove(e: React.PointerEvent) {
+    if (!previewResizeRef.current.active) return;
+    const next = Math.max(80, Math.min(window.innerHeight * 0.85, previewResizeRef.current.startH + e.clientY - previewResizeRef.current.startY));
+    setPreviewHeight(next);
+  }
+  function handleResizeEnd() { previewResizeRef.current.active = false; }
   const [newImage, setNewImage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewBlobUrls, setPreviewBlobUrls] = useState<Map<string, string>>(new Map());
@@ -379,7 +394,7 @@ export default function ProjectForm() {
         <p className="text-sm text-gray-500">이 페이지는 데스크탑 환경에서만 지원됩니다.</p>
       </div>
     </div>
-    <div className="hidden lg:block min-h-screen bg-white">
+    <div className="hidden lg:flex lg:flex-col h-screen bg-white overflow-hidden">
 
       {/* ── 창 크기 경고 배너 ── */}
       {isNarrow && (
@@ -389,7 +404,7 @@ export default function ProjectForm() {
       )}
 
       {/* ── 헤더 ── */}
-      <header className="border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center justify-between gap-2 shrink-0 flex-wrap">
+      <header className="shrink-0 border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">새 프로젝트 등록</h1>
           <p className="text-xs text-gray-500 mt-0.5">폼을 작성하면 MDX 파일이 자동 생성됩니다</p>
@@ -469,12 +484,37 @@ export default function ProjectForm() {
       )}
 
       {/* ── 미리보기 스트립 ── */}
-      <div className="h-[320px] border-b border-gray-200 shrink-0 overflow-hidden">
-        <ProjectDetailView project={formToProject(data, previewBlobUrls)} />
+      <div
+        className="shrink-0 overflow-hidden transition-all duration-300 [&_[data-exclude-pin]]:hidden"
+        style={{ height: previewCollapsed ? 0 : previewHovered ? previewHeight : previewHeight / 2, transform: 'translateZ(0)' }}
+        onMouseEnter={() => setPreviewHovered(true)}
+        onMouseLeave={() => setPreviewHovered(false)}
+      >
+        <ProjectZoomGallery
+          projects={[formToProject(data, previewBlobUrls)]}
+          defaultExpandedId={data.id || "preview"}
+        />
+      </div>
+      {/* 드래그 핸들 + 접기/펼치기 버튼 */}
+      <div
+        className="shrink-0 h-7 flex items-center justify-between px-3 cursor-row-resize bg-gray-100 hover:bg-gray-200 transition-colors border-b border-gray-200 select-none"
+        onPointerDown={(e) => { if ((e.target as HTMLElement).closest('button')) return; handleResizeStart(e); }}
+        onPointerMove={handleResizeMove}
+        onPointerUp={handleResizeEnd}
+        onPointerCancel={handleResizeEnd}
+      >
+        <span className="text-[10px] text-gray-400 uppercase tracking-widest">미리보기</span>
+        <button
+          type="button"
+          onClick={() => setPreviewCollapsed((v) => !v)}
+          className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-0.5 rounded hover:bg-gray-300 transition-colors"
+        >
+          {previewCollapsed ? "▼ 펼치기" : "▲ 접기"}
+        </button>
       </div>
 
-      {/* ── 폼 + MDX (나머지 높이 채움) ── */}
-      <div className="flex">
+      {/* ── 폼 + MDX ── */}
+      <div className="flex flex-1 overflow-y-auto">
 
         {/* 폼 */}
         <div className="flex-1 p-6 space-y-8">

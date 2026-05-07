@@ -116,7 +116,7 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
 
       {/* 기존 프로젝트 탭 */}
       {tab === "list" && (
-        <div className="flex-1 overflow-y-auto space-y-1">
+        <div className="space-y-1">
           {!projectsLoaded ? (
             <p className="text-xs text-gray-400 text-center py-8">불러오는 중...</p>
           ) : existingProjects.length === 0 ? (
@@ -157,7 +157,7 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
 
       {/* MDX 탭 */}
       {tab === "mdx" && (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col">
           <div className="flex items-center justify-between mb-2 shrink-0">
             <span className="text-xs text-gray-500">MDX 미리보기</span>
             <button
@@ -181,7 +181,8 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
           <textarea
             readOnly
             value={mdx}
-            className="flex-1 w-full font-mono text-xs border border-gray-200 rounded-lg p-3 bg-gray-50 resize-none focus:outline-none"
+            rows={mdx.split('\n').length + 2}
+            className="w-full font-mono text-xs border border-gray-200 rounded-lg p-3 bg-gray-50 resize-none focus:outline-none"
             spellCheck={false}
           />
           <p className="mt-2 text-xs text-gray-400 shrink-0">
@@ -192,7 +193,7 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
 
       {/* 스키마 탭 */}
       {tab === "schema" && (
-        <div className="flex-1 overflow-y-auto">
+        <div>
           {!schemaLoaded ? (
             <p className="text-xs text-gray-400 text-center py-8">불러오는 중...</p>
           ) : (

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { Project } from '@/types/project'
 import { useRouter } from "next/navigation";
@@ -118,22 +118,13 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
       className={`relative w-full h-full max-h-full min-h-0 bg-white dark:bg-zinc-950 overflow-hidden flex flex-col transition-all duration-1000 ease-out 
         ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}
     >
-      <button onClick={handleClose} className="absolute right-4 top-4 z-50 rounded-full p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-        <X className="w-6 h-6" />
-      </button>
 
-      <button onClick={() => scroll('left')} className="absolute left-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white hover:scale-110 active:scale-95 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]">
-        <ChevronLeft className="h-10 w-10 stroke-[2.5]" />
-      </button>
-      <button onClick={() => scroll('right')} className="absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white hover:scale-110 active:scale-95 drop-shadow-[0_0_8_px_rgba(0,0,0,0.8)]">
-        <ChevronRight className="h-10 w-10 stroke-[2.5]" />
-      </button>
 
       {/* Desktop view */}
       <div 
         ref={scrollRef}
         onWheelCapture={handleWheelCapture}
-        className="hidden md:flex flex-row flex-nowrap h-full max-h-full min-h-0 overflow-x-auto overflow-y-hidden no-scrollbar"
+        className="hidden md:flex flex-row flex-nowrap h-full max-h-full min-h-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-track]:bg-transparent"
       >
         {slides.map((slide: any, index: number) => {
           if (slide.type === "text" || slide.type === "project-cover") {
@@ -168,13 +159,12 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                   ref={index === firstTextIndex ? textPanelRef : undefined}
                   data-text-scroller="true"
                   className={`h-full min-h-0 overflow-y-hidden ${isCover ? "text-right" : "text-left"}`}
-                  style={{ padding: "clamp(1rem,6vh,5rem) clamp(1.5rem,7vh,5rem) clamp(1rem,6vh,5rem) clamp(1rem,6vh,5rem)" }}
+                  style={{ padding: "5%", cursor: "grab", touchAction: "none" }}
                   onPointerDown={handleTextPointerDown}
                   onPointerMove={handleTextPointerMove}
                   onPointerUp={endTextDrag}
                   onPointerCancel={endTextDrag}
                   onPointerLeave={endTextDrag}
-                  style={{ cursor: "grab", touchAction: "none" }}
                 >
                   {/* 1. 표지 슬라이드: 제목과 제원만 노출 */}
                   {isCover ? (

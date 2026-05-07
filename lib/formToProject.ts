@@ -2,7 +2,13 @@ import { ProjectFormData } from "./generateMdx";
 import { Project } from "@/types/project";
 
 export function formToProject(data: ProjectFormData, blobUrls: Map<string, string>): Project {
-  const resolve = (src: string) => blobUrls.get(src) ?? src;
+  const id = data.id || "preview";
+  const resolve = (src: string) => {
+    if (!src) return src;
+    if (blobUrls.has(src)) return blobUrls.get(src)!;
+    if (src.startsWith('/') || src.startsWith('blob:') || src.startsWith('http')) return src;
+    return `/projects/${id}/${src}`;
+  };
 
   return {
     id: data.id || "preview",
