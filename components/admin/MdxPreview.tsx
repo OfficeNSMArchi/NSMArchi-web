@@ -48,12 +48,14 @@ interface Props {
   existingProjects?: ExistingProject[];
   projectsLoaded?: boolean;
   onLoadProject?: (id: string) => void;
+  onDeleteProject?: (id: string) => Promise<void>;
 }
 
-export default function MdxPreview({ mdx, projectId, errors = [], existingProjects = [], projectsLoaded = false, onLoadProject }: Props) {
+export default function MdxPreview({ mdx, projectId, errors = [], existingProjects = [], projectsLoaded = false, onLoadProject, onDeleteProject }: Props) {
   const [tab, setTab] = useState<"list" | "mdx" | "schema">("list");
   const [copied, setCopied] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [schemaTotal, setSchemaTotal] = useState(0);
   const [schemaLoaded, setSchemaLoaded] = useState(false);
@@ -142,10 +144,29 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
                       <button
                         type="button"
                         onClick={() => { onLoadProject?.(p.id); setOpenMenu(null); }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-lg"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-t-lg"
                       >
                         폼에 불러오기
                       </button>
+                      {onDeleteProject && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setOpenMenu(null);
+                            const confirmed = confirm(
+                              `"${p.titleKo || p.title}" 프로젝트를 삭제하시겠습니까?\n\n추후 복구를 원하면 GitHub에서 롤백하세요.`
+                            );
+                            if (!confirmed) return;
+                            setDeletingId(p.id);
+                            await onDeleteProject(p.id);
+                            setDeletingId(null);
+                          }}
+                          disabled={deletingId === p.id}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 text-red-600 rounded-b-lg border-t border-gray-100 disabled:opacity-40"
+                        >
+                          {deletingId === p.id ? "삭제 중…" : "삭제"}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -9,6 +9,8 @@ import JSZip from "jszip";
 import { Lock, LockOpen } from "lucide-react";
 import ContentBlockEditor from "./ContentBlockEditor";
 import MdxPreview from "./MdxPreview";
+import { useSession, signIn, signOut } from "next-auth/react";
+import imageCompression from "browser-image-compression";
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -83,7 +85,19 @@ function isImageFile(name: string) {
 }
 
 
+type PublishStatus = "idle" | "publishing" | "success" | "error";
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ProjectForm() {
+  const { data: session } = useSession();
   const [data, setData] = useState<ProjectFormData>(defaultFormData);
   const [idSlug, setIdSlug] = useState("");
   const [slugSync, setSlugSync] = useState(false);
@@ -93,6 +107,9 @@ export default function ProjectForm() {
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [dirActive, setDirActive] = useState(true);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>("idle");
+  const [publishError, setPublishError] = useState("");
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     const update = () => { setIsNarrow(window.innerWidth < 1280); };
@@ -100,6 +117,12 @@ export default function ProjectForm() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   useEffect(() => {
     function loadProjects() {
@@ -386,6 +409,46 @@ export default function ProjectForm() {
     reader.readAsText(file);
   }
 
+  async function handlePublish() {
+    if (!session) {
+      signIn("google");
+      return;
+    }
+    if (validationErrors.length > 0) return;
+    if (!confirmExisting()) return;
+
+    setPublishStatus("publishing");
+    setPublishError("");
+
+    try {
+      const compressOpts = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
+      const images = await Promise.all(
+        uploadedFiles.map(async (file) => {
+          const compressed = await imageCompression(file, compressOpts);
+          const base64 = await fileToBase64(compressed);
+          return { filename: file.name, base64 };
+        })
+      );
+
+      const res = await fetch("/api/publish-project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: data.id, mdxContent: generateMdx(data), images }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "업로드 실패");
+      }
+
+      setPublishStatus("success");
+      setCountdown(90);
+    } catch (e: any) {
+      setPublishStatus("error");
+      setPublishError(e.message || "알 수 없는 오류");
+    }
+  }
+
   return (
     <>
     <div className="flex lg:hidden h-screen items-center justify-center bg-white px-8">
@@ -445,7 +508,7 @@ export default function ProjectForm() {
               onClick={() => setShowDownloadMenu((v) => !v)}
               disabled={validationErrors.length > 0}
               title={validationErrors.length > 0 ? validationErrors.map((e) => `${e} 누락`).join(", ") : undefined}
-              className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
               <span className="hidden lg:inline">다운로드 {data.id ? `${data.id}` : ""}  </span><span className="lg:hidden">다운로드</span> ▾
             </button>
@@ -469,6 +532,30 @@ export default function ProjectForm() {
               </div>
             )}
           </div>
+
+          {/* 홈페이지 등록 버튼 */}
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={validationErrors.length > 0 || publishStatus === "publishing"}
+            title={validationErrors.length > 0 ? validationErrors.map((e) => `${e} 누락`).join(", ") : session ? "GitHub에 커밋하고 홈페이지에 반영" : "로그인 후 홈페이지에 등록"}
+            className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors"
+          >
+            {publishStatus === "publishing" ? "등록 중…" : session ? "홈페이지에 등록" : "🔒 홈페이지에 등록"}
+          </button>
+
+          {/* 로그인 상태 */}
+          {session ? (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs text-gray-500 hidden xl:inline">{session.user?.email}</span>
+              <button type="button" onClick={() => signOut()} className="text-xs text-gray-400 hover:text-gray-600">로그아웃</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => signIn("google")} className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2">
+              Google 로그인
+            </button>
+          )}
         </div>
       </header>
 
@@ -766,7 +853,26 @@ export default function ProjectForm() {
 
         {/* MDX 미리보기 (우측 고정) */}
         <div className="w-full lg:w-[480px] xl:w-[560px] border-l border-gray-200 p-6 flex flex-col">
-          <MdxPreview mdx={mdx} projectId={data.id} errors={validationErrors} existingProjects={existingProjects} projectsLoaded={projectsLoaded} onLoadProject={loadFromId} />
+          <MdxPreview
+            mdx={mdx}
+            projectId={data.id}
+            errors={validationErrors}
+            existingProjects={existingProjects}
+            projectsLoaded={projectsLoaded}
+            onLoadProject={loadFromId}
+            onDeleteProject={session ? async (id) => {
+              const res = await fetch("/api/delete-project", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ projectId: id }),
+              });
+              if (res.ok) {
+                setExistingProjects((prev) => prev.filter((p) => p.id !== id));
+              } else {
+                alert("삭제 실패. 다시 시도해주세요.");
+              }
+            } : undefined}
+          />
         </div>
 
       </div>
@@ -840,6 +946,60 @@ export default function ProjectForm() {
       )}
 
     </div>
+
+      {/* ── 등록 성공 오버레이 ── */}
+      {publishStatus === "success" && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-7 text-center space-y-4">
+            <div className="text-3xl">✅</div>
+            <h2 className="text-base font-semibold text-gray-900">GitHub에 등록되었습니다</h2>
+            <p className="text-sm text-gray-500">Vercel이 자동으로 빌드를 시작했습니다.</p>
+
+            {countdown > 0 ? (
+              <div className="text-sm text-gray-400">
+                약 <span className="font-mono font-semibold text-gray-700">{countdown}초</span> 후 홈페이지에 반영됩니다
+              </div>
+            ) : (
+              <p className="text-sm text-green-600 font-medium">빌드가 완료되었을 수 있습니다.</p>
+            )}
+
+            <div className="flex flex-col gap-2 pt-1">
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                홈페이지 확인하기 {countdown > 0 && <span className="text-gray-400 text-xs">(빌드 전일 수 있음)</span>}
+              </a>
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+              >
+                Vercel 대시보드 확인
+              </a>
+              <button
+                type="button"
+                onClick={() => setPublishStatus("idle")}
+                className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 mt-1"
+              >
+                계속 편집
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 등록 에러 배너 ── */}
+      {publishStatus === "error" && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-50 border border-red-200 rounded-lg px-5 py-3 flex items-center gap-3 shadow-lg z-50">
+          <span className="text-sm text-red-700">등록 실패: {publishError}</span>
+          <button type="button" onClick={() => setPublishStatus("idle")} className="text-xs text-red-500 hover:text-red-700">닫기</button>
+        </div>
+      )}
+
     </>
   );
 }

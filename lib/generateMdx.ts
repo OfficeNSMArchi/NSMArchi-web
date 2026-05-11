@@ -67,8 +67,7 @@ export const REQUIRED_FORM_FIELDS = new Set([
 
 function escapeYamlString(str: string): string {
   if (!str) return '""';
-  // multiline은 블록 스칼라로 처리하므로, 단일 라인용 이스케이프만
-  if (str.includes('"') || str.includes("'") || str.includes(":") || str.includes("#") || str.includes("\n")) {
+  if (str.includes('"') || str.includes("'") || str.includes(":") || str.includes("#") || str.includes("\n") || str.startsWith("-") || str.startsWith("*") || str.startsWith("?")) {
     return `"${str.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
   }
   return str;
