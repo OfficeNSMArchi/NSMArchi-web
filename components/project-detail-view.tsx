@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useEffect, useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from "lucide-react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { Project } from '@/types/project'
 import { useRouter } from "next/navigation";
@@ -118,22 +118,13 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
       className={`relative w-full h-full max-h-full min-h-0 bg-white dark:bg-zinc-950 overflow-hidden flex flex-col transition-all duration-1000 ease-out 
         ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}
     >
-      <button onClick={handleClose} className="absolute right-4 top-4 z-50 rounded-full p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-        <X className="w-6 h-6" />
-      </button>
 
-      <button onClick={() => scroll('left')} className="absolute left-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white hover:scale-110 active:scale-95 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]">
-        <ChevronLeft className="h-10 w-10 stroke-[2.5]" />
-      </button>
-      <button onClick={() => scroll('right')} className="absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden md:block text-white hover:scale-110 active:scale-95 drop-shadow-[0_0_8_px_rgba(0,0,0,0.8)]">
-        <ChevronRight className="h-10 w-10 stroke-[2.5]" />
-      </button>
 
       {/* Desktop view */}
       <div 
         ref={scrollRef}
         onWheelCapture={handleWheelCapture}
-        className="hidden md:flex flex-row flex-nowrap h-full max-h-full min-h-0 overflow-x-auto overflow-y-hidden no-scrollbar"
+        className="hidden md:flex flex-row flex-nowrap h-full max-h-full min-h-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-track]:bg-transparent"
       >
         {slides.map((slide: any, index: number) => {
           if (slide.type === "text" || slide.type === "project-cover") {
@@ -142,7 +133,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
             const slideBody = slide.body ? t(slide.body.ko, slide.body.en) : undefined
 
             return (
-              <div key={`text-${index}`} data-slide="text" className="relative flex-none h-full w-[250px] max-h-full min-h-0 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800">
+              <div key={`text-${index}`} data-slide="text" className="relative flex-none h-full w-[clamp(160px,18vw,280px)] max-h-full min-h-0 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 border-x border-zinc-100 dark:border-zinc-800" style={{ containerType: 'inline-size' }}>
                 <div className="pointer-events-auto absolute right-4 top-4 bottom-4 z-10 hidden md:flex flex-col justify-between">
                   <button type="button" className="grid h-8 w-8 place-items-center text-zinc-300 hover:text-zinc-400" onClick={(e) => {
                     const scroller = e.currentTarget.closest('[data-slide="text"]')?.querySelector('[data-text-scroller="true"]') as HTMLDivElement | null
@@ -167,20 +158,20 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 <div
                   ref={index === firstTextIndex ? textPanelRef : undefined}
                   data-text-scroller="true"
-                  className={`h-full min-h-0 overflow-y-hidden p-16 pr-20 ${isCover ? "text-right" : "text-left"}`}
+                  className={`h-full min-h-0 overflow-y-hidden ${isCover ? "text-right" : "text-left"}`}
+                  style={{ padding: "5%", cursor: "grab", touchAction: "none" }}
                   onPointerDown={handleTextPointerDown}
                   onPointerMove={handleTextPointerMove}
                   onPointerUp={endTextDrag}
                   onPointerCancel={endTextDrag}
                   onPointerLeave={endTextDrag}
-                  style={{ cursor: "grab", touchAction: "none" }}
                 >
                   {/* 1. 표지 슬라이드: 제목과 제원만 노출 */}
                   {isCover ? (
                     <>
-                      <p className="text-[10px] font-bold text-blue-600 mb-4 uppercase tracking-[0.3em]">{companyLabel}</p>
-                      <h2 className="text-2xl md:text-xl font-black tracking-tighter leading-tight mb-10">{mainTitle}</h2>
-                      <div className="mb-12 space-y-3 text-[11px] uppercase tracking-[0.2em] text-zinc-400 font-bold">
+                      <p className="font-bold text-blue-600 mb-4 uppercase tracking-[0.3em]" style={{ fontSize: "clamp(0.3rem,2.5cqw,10pt)" }}>{companyLabel}</p>
+                      <h2 className="font-mono font-bold tracking-tighter uppercase leading-tight mb-10" style={{ fontSize: "clamp(0.4rem,3cqw,12pt)" }}>{mainTitle}</h2>
+                      <div className="mb-12 space-y-3 uppercase tracking-[0.2em] text-zinc-400 font-bold" style={{ fontSize: "clamp(0.3rem,2.5cqw,10pt)" }}>
                         <p>{t(project.locationKo, project.location)}</p>
                         <p>{project.year}</p>
                         <p>{project.area}</p>
@@ -190,8 +181,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                   ) : (
                     /* 2. 일반 텍스트 슬라이드: 본문 설명글만 노출 */
                     <>
-                      {slideTitle && <h3 className="font-bold tracking-tight text-foreground/90 mb-4 text-xl">{slideTitle}</h3>}
-                      {slideBody && <p className="text-base md:text-[15px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-light whitespace-pre-wrap">{slideBody}</p>}
+                      {slideTitle && <h3 className="font-mono font-bold tracking-tight uppercase text-foreground/90 mb-4" style={{ fontSize: "clamp(0.4rem,3cqw,12pt)" }}>{slideTitle}</h3>}
+                      {slideBody && <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: "clamp(0.3rem,2.5cqw,8pt)" }}>{slideBody}</p>}
                     </>
                   )}
                 </div>

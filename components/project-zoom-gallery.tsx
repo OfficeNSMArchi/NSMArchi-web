@@ -282,6 +282,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}
           onClick={handleCoverClick}
         >
+          {project.image ? (
            <Image
             src={project.image}
             alt={title}
@@ -290,7 +291,11 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
             className="object-cover"
             draggable={false}
             priority
+            unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH] blob URL 지원
           />
+          ) : (
+            <div className="absolute inset-0 bg-gray-100" />
+          )}
           {!isExpanded && (
             <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4 md:p-10">
               <p
@@ -328,7 +333,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
               }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                  <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" />
+                  <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
               </div>
             ))}
           </>
@@ -347,7 +352,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                   }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
                     <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
                       <div className="relative w-full h-full">
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" />
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                       </div>
                     </div>
                   </div>
@@ -366,15 +371,22 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
   );
 };
 
-export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }: { projects: Project[], storageKey?: string }) => {
+// [ADMIN-PREVIEW-PATCH] defaultExpandedId prop 추가 — 어드민 전체 미리보기 오버레이용
+// 업데이트 시 이 prop과 아래 useEffect 분기, 그리고 각 Image의 unoptimized 조건을 수동으로 다시 추가할 것
+export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', defaultExpandedId }: { projects: Project[], storageKey?: string, defaultExpandedId?: string }) => {
   // 서버/클라 hydration 일치 위해 빈 상태로 시작, 마운트 후 sessionStorage 동기화
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   useEffect(() => {
+    // [ADMIN-PREVIEW-PATCH] defaultExpandedId가 있으면 해당 프로젝트를 즉시 expand
+    if (defaultExpandedId) {
+      setExpandedIds(new Set([defaultExpandedId]));
+      return;
+    }
     try {
       const saved = sessionStorage.getItem(storageKey);
       if (saved) setExpandedIds(new Set(JSON.parse(saved)));
     } catch {}
-  }, [storageKey]);
+  }, [storageKey, defaultExpandedId]);
   const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
@@ -436,13 +448,20 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
     if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        window.history.pushState(null, '', window.location.pathname);
+      } else {
+        next.add(id);
+        window.history.pushState(null, '', `/projects/${id}`);
+      }
       return next;
     });
   };
 
   const handleGridClick = (id: string) => {
     setFading(true);
+    window.history.pushState(null, '', `/projects/${id}`);
     setTimeout(() => {
       setViewMode('list');
       setDisplayMode('list');
@@ -560,6 +579,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                     <p className="text-white text-lg font-bold tracking-tight uppercase">{title}</p>
