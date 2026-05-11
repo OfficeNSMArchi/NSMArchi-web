@@ -66,8 +66,40 @@ const MARGIN_STYLE = { width: 'var(--margin-w)', ... };
 - 다른 컴퓨터: 입력 폼 전체 구조 구축 (입력폼 → admin 폼 개선 → URL 라우팅)
 - 이 컴퓨터(zoom-test): 갤러리 줌 인터랙션 완성 + 어드민 미리보기 스트립
 
+## Admin 자동 배포 시스템 (2026-05-12 추가)
+
+Google(`office@nsmarchi.com`) 로그인 시 GitHub에 직접 커밋 → Vercel 자동 배포.
+
+### 주요 파일
+- `auth.ts` — NextAuth v5, office@nsmarchi.com만 허용
+- `app/api/auth/[...nextauth]/route.ts` — NextAuth 핸들러
+- `app/api/publish-project/route.ts` — 등록 GitHub 커밋 API
+- `app/api/delete-project/route.ts` — 삭제 GitHub 커밋 API
+- `app/admin/layout.tsx` — SessionProvider 래퍼
+
+### 환경변수 (로컬 .env.local / Vercel 둘 다 필요)
+```
+AUTH_URL=http://localhost:3000        # Vercel은 https://nsmarchi.com
+AUTH_SECRET=
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+GITHUB_TOKEN=                         # repo Contents 쓰기 권한 PAT
+GITHUB_OWNER=OfficeNSMArchi
+GITHUB_REPO=NSMArchi-web
+```
+> `.env.local`은 gitignore됨 — 새 기기에서 직접 생성 필요
+
+### Google Cloud Console
+- 리디렉션 URI: `http://localhost:3000/api/auth/callback/google`, `https://nsmarchi.com/api/auth/callback/google`
+- 테스트 사용자: `office@nsmarchi.com`
+
+### 주의
+- 작업 시작 전 `git pull` 필수 (버튼 등록이 GitHub에 직접 커밋)
+- `area: "-"` 등 YAML 특수문자 따옴표 필요 (generateMdx.ts에서 자동 처리)
+
 ## 다음 작업 예정
 
+- Admin 폼 필드 개선
 - 갤러리 컴포넌트 리팩토링 검토:
   - LOW RISK: LeftMetaPanel, RightContentArea, ControlPanel 분리
   - HIGH RISK (유지 권장): ScrollController, TextBlock
