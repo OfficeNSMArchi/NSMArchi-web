@@ -411,7 +411,7 @@ export default function ProjectForm() {
 
   async function handlePublish() {
     if (!session) {
-      signIn("google");
+      signIn("google", { callbackUrl: "/admin/new-project" });
       return;
     }
     if (validationErrors.length > 0) return;
@@ -552,7 +552,7 @@ export default function ProjectForm() {
               <button type="button" onClick={() => signOut()} className="text-xs text-gray-400 hover:text-gray-600">로그아웃</button>
             </div>
           ) : (
-            <button type="button" onClick={() => signIn("google")} className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2">
+            <button type="button" onClick={() => signIn("google", { callbackUrl: "/admin/new-project" })} className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2">
               Google 로그인
             </button>
           )}
