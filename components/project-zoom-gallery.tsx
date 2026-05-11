@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
 import { Project } from '@/types/project';
 import Image from 'next/image';
 import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
-import { List, Grid2X2, Pin } from 'lucide-react';
+import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -23,6 +23,7 @@ const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
 );
 
 const EXPAND_DURATION = 1500; // ms — 열기/닫기 애니메이션 속도
+const DESKTOP_ZOOM_IN = 1.1; // 데스크탑에서 프로젝트 열릴 때 적용할 줌 배율
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
 const GRID_TO_LIST_SCROLL_DURATION = 2500; // ms — 그리드→리스트 전환 후 해당 프로젝트로 스크롤 속도
 const TEXT_PADDING = 'p-3 md:p-8'; // 텍스트 슬라이드 안쪽 여백
@@ -142,6 +143,18 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
   const dragStartPos = useRef({ x: 0, y: 0 });
   const dragStartScrollLeft = useRef(0);
 
+  // 닫힐 때 EXPAND_DURATION 동안 overflow-hidden 적용 지연 → 트랜지션이 잘리지 않음
+  // useLayoutEffect: 렌더와 동기 실행 → isExpanded=true 직후 keepOpen=true 보장 (race condition 방지)
+  const [keepOpen, setKeepOpen] = useState(false);
+  useLayoutEffect(() => {
+    if (isExpanded) {
+      setKeepOpen(true);
+    } else {
+      const timer = setTimeout(() => setKeepOpen(false), EXPAND_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [isExpanded]);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     dragStartPos.current = { x: e.clientX, y: e.clientY };
     dragStartScrollLeft.current = scrollRef.current?.scrollLeft ?? 0;
@@ -215,11 +228,13 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
         className={`flex items-stretch transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isExpanded
             ? 'overflow-x-auto hide-scrollbar cursor-pointer'
-            : 'overflow-hidden w-full'
+            : keepOpen
+              ? 'overflow-x-auto hide-scrollbar pointer-events-none'
+              : 'overflow-hidden w-full'
         }`}
         style={{
           transitionDuration: `${EXPAND_DURATION}ms`,
-          ...(isExpanded ? { width: '100vw' } : {}),
+          ...((isExpanded || keepOpen) ? { width: '100vw' } : {}),
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -466,6 +481,36 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
 
   const anyExpanded = expandedIds.size > 0 && displayMode === 'list';
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 데스크탑: 프로젝트 열릴 때 갤러리 전체 zoom (layout에 영향 → 다른 row들도 밀려남)
+  // CSS zoom transition이 브라우저마다 불안정 → rAF로 직접 보간
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (!isDesktop) return;
+    const target = anyExpanded ? DESKTOP_ZOOM_IN : 1;
+    const from = parseFloat((el.style.zoom as string) || '1') || 1;
+    if (from === target) return;
+    const startTime = performance.now();
+    let rafId: number;
+    const step = (now: number) => {
+      const t = Math.min((now - startTime) / EXPAND_DURATION, 1);
+      const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      el.style.zoom = String(from + (target - from) * ease);
+      if (t < 1) { rafId = requestAnimationFrame(step); }
+    };
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [anyExpanded]);
+
+  // 언마운트 시에만 zoom 초기화
+  useEffect(() => {
+    const el = wrapperRef.current;
+    return () => { if (el) el.style.zoom = ''; };
+  }, []);
+
   const controlRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -483,7 +528,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
 
   return (
     <LayoutGroup>
-    <div className="w-full relative flex flex-col items-center">
+    <div ref={wrapperRef} className="w-full relative flex flex-col items-center">
 <div className="w-full flex flex-col items-center pb-[20px]" style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}>
         {displayMode === 'list' ? (
           projects.map((project) => (
@@ -533,7 +578,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
       data-exclude-pin
       className="flex fixed z-40 flex-col items-center"
       style={{
-        left: buttonPos ? buttonPos.x : 0,
+        left: buttonPos ? buttonPos.x - 30 : 0,
         top: buttonPos ? buttonPos.y : 0,
         transform: 'translate(-50%, -50%)',
         transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1), top 0.5s cubic-bezier(0.4,0,0.2,1)',
@@ -565,6 +610,15 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded' }
         aria-label="스크롤 방향 전환"
       >
         <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
+      </button>
+      {/* 전체 닫기 — 데스크탑 + 확장시만 노출 */}
+      <button
+        onClick={() => { setExpandedIds(new Set()); try { sessionStorage.removeItem(storageKey) } catch {} }}
+        className={`hidden md:flex p-1 transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
+        aria-label="전체 닫기"
+      >
+        <RotateCcw size={20} />
       </button>
     </div>
     </LayoutGroup>
