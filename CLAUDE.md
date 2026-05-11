@@ -50,9 +50,25 @@ const MARGIN_STYLE = { width: 'var(--margin-w)', ... };
 1. `defaultExpandedId` prop + useEffect auto-expand
 2~5. `unoptimized={src.startsWith('blob:')}` — blob URL 이미지 지원
 
+## 어드민 입력 폼 (`/admin/new-project`)
+
+`components/admin/ProjectForm.tsx` — 핵심 기능:
+- 프로젝트 ID 자동 생성 (회사 prefix + slug, Lock/Unlock 토글)
+- 폼 입력 → MDX 생성 + ZIP 다운로드 (혹은 파일시스템 직접 저장)
+- `localStorage` 임시저장 / 복원 (draft 기능)
+- 기존 프로젝트 목록 `/api/project-ids`로 불러와 ID 중복 체크
+- `ContentBlockEditor` — 콘텐츠 블록(텍스트/이미지) 편집
+- `MdxPreview` — MDX 미리보기
+- 하단에 `ProjectZoomGallery` 미리보기 스트립 (auto-expand)
+- 1280px 미만에서 narrow 레이아웃 전환
+
+작업 이력:
+- 다른 컴퓨터: 입력 폼 전체 구조 구축 (입력폼 → admin 폼 개선 → URL 라우팅)
+- 이 컴퓨터(zoom-test): 갤러리 줌 인터랙션 완성 + 어드민 미리보기 스트립
+
 ## 다음 작업 예정
 
-- 사무실 변경분 머지 (어제 push 안 한 커밋)
-- 머지 후 갤러리 컴포넌트 리팩토링 검토:
+- 갤러리 컴포넌트 리팩토링 검토:
   - LOW RISK: LeftMetaPanel, RightContentArea, ControlPanel 분리
   - HIGH RISK (유지 권장): ScrollController, TextBlock
+- zoom-test → 메인 프로젝트 마이그레이션 (B안: state 기반 + URL 업데이트)
