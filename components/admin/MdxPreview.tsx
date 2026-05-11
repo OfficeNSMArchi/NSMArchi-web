@@ -56,9 +56,17 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
   const [copied, setCopied] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [deleteCountdown, setDeleteCountdown] = useState(0);
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [schemaTotal, setSchemaTotal] = useState(0);
   const [schemaLoaded, setSchemaLoaded] = useState(false);
+
+  useEffect(() => {
+    if (deleteCountdown <= 0) return;
+    const t = setTimeout(() => setDeleteCountdown((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [deleteCountdown]);
 
   useEffect(() => {
     if (tab !== "schema" || schemaLoaded) return;
@@ -85,6 +93,7 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
   const formOnly = [...FORM_FIELDS].filter((k) => !mdxKeys.has(k));
 
   return (
+    <>
     <div className="flex flex-col h-full">
 
       {/* 탭 */}
@@ -160,6 +169,8 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
                             setDeletingId(p.id);
                             await onDeleteProject(p.id);
                             setDeletingId(null);
+                            setDeleteSuccess(p.titleKo || p.title);
+                            setDeleteCountdown(90);
                           }}
                           disabled={deletingId === p.id}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 text-red-600 rounded-b-lg border-t border-gray-100 disabled:opacity-40"
@@ -291,5 +302,50 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
       )}
 
     </div>
+
+      {/* 삭제 성공 오버레이 */}
+      {deleteSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-7 text-center space-y-4">
+            <div className="text-3xl">🗑️</div>
+            <h2 className="text-base font-semibold text-gray-900">GitHub에서 삭제되었습니다</h2>
+            <p className="text-sm text-gray-500">{deleteSuccess}</p>
+            <p className="text-sm text-gray-400">Vercel이 자동으로 빌드를 시작했습니다.</p>
+            {deleteCountdown > 0 ? (
+              <div className="text-sm text-gray-400">
+                약 <span className="font-mono font-semibold text-gray-700">{deleteCountdown}초</span> 후 홈페이지에 반영됩니다
+              </div>
+            ) : (
+              <p className="text-sm text-green-600 font-medium">빌드가 완료되었을 수 있습니다.</p>
+            )}
+            <div className="flex flex-col gap-2 pt-1">
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                홈페이지 확인하기
+              </a>
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+              >
+                Vercel 대시보드 확인
+              </a>
+              <button
+                type="button"
+                onClick={() => setDeleteSuccess(null)}
+                className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 mt-1"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
