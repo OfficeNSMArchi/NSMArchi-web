@@ -549,7 +549,7 @@ export default function ProjectForm() {
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-gray-500 hidden xl:inline">{session.user?.email}</span>
-              <button type="button" onClick={() => signOut()} className="text-xs text-gray-400 hover:text-gray-600">로그아웃</button>
+              <button type="button" onClick={() => signOut({ callbackUrl: "/admin/new-project" })} className="text-xs text-gray-400 hover:text-gray-600">로그아웃</button>
             </div>
           ) : (
             <button type="button" onClick={() => signIn("google", { callbackUrl: "/admin/new-project" })} className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2">
