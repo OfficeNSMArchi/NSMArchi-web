@@ -777,42 +777,26 @@ export default function ProjectForm() {
                   ))}
                 </div>
               </Field>
-              {data.companies.length > 0 && (
-                <Field label="노출">
-                  <div className="flex gap-4 mt-1">
-                    {(["ndb", "snp", "metalogic"] as const).filter(co => data.companies.includes(co)).map((co) => (
-                      <label key={co} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={data.visibleOn.includes(co)}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...data.visibleOn, co]
-                              : data.visibleOn.filter((c) => c !== co)
-                            set("visibleOn", next)
-                          }}
-                          className="w-4 h-4"
-                        />
-                        {co.toUpperCase()}
-                      </label>
-                    ))}
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Field label="노출">
+                <div className="flex gap-4 mt-1">
+                  {(["ndb", "snp", "metalogic", "nsm"] as const).map((co) => (
+                    <label key={co} className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={data.visibleOn.includes("nsm")}
+                        checked={data.visibleOn.includes(co)}
                         onChange={(e) => {
                           const next = e.target.checked
-                            ? [...data.visibleOn, "nsm"]
-                            : data.visibleOn.filter((c) => c !== "nsm")
+                            ? [...data.visibleOn, co]
+                            : data.visibleOn.filter((c) => c !== co)
                           set("visibleOn", next)
                         }}
                         className="w-4 h-4"
                       />
-                      NSM 홈
+                      {co === "nsm" ? "NSM 홈" : co.toUpperCase()}
                     </label>
-                  </div>
-                </Field>
-              )}
+                  ))}
+                </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
                 {data.companies.includes("metalogic") && (
                   <Field label="Metalogic 카테고리">
