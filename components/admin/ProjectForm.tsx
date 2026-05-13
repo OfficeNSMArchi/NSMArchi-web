@@ -108,12 +108,15 @@ export default function ProjectForm() {
   const [existingProjects, setExistingProjects] = useState<{id: string; title: string; titleKo: string}[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
-  const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
-  const [dirActive, setDirActive] = useState(true);
+  const [gitAvailable, setGitAvailable] = useState<boolean | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
   const [publishStatus, setPublishStatus] = useState<PublishStatus>("idle");
   const [publishError, setPublishError] = useState("");
   const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/save-local").then(r => r.json()).then(j => setGitAvailable(j.available)).catch(() => setGitAvailable(false));
+  }, []);
 
   useEffect(() => {
     const update = () => { setIsNarrow(window.innerWidth < 1280); };
@@ -326,13 +329,6 @@ export default function ProjectForm() {
     e.target.value = "";
   }
 
-  async function pickFolder() {
-    try {
-      const handle = await (window as any).showDirectoryPicker({ mode: "readwrite" });
-      setDirHandle(handle);
-    } catch {}
-  }
-
   function confirmExisting(): boolean {
     if (isDuplicate) {
       return confirm(`"${data.id}" 는 기존 프로젝트입니다.\n기존 프로젝트의 데이터를 확인 후 교체하세요.`);
@@ -342,19 +338,6 @@ export default function ProjectForm() {
 
   async function handleDownloadMdx() {
     if (!confirmExisting()) return;
-    if (dirHandle && dirActive) {
-      try {
-        const subDir = await dirHandle.getDirectoryHandle(data.id, { create: true });
-        const fileHandle = await subDir.getFileHandle(`${data.id}.mdx`, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(mdx);
-        await writable.close();
-        setShowDownloadMenu(false);
-        return;
-      } catch {
-        alert("폴더에 저장 실패. 일반 다운로드로 진행합니다.");
-      }
-    }
     const blob = new Blob([mdx], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -367,25 +350,6 @@ export default function ProjectForm() {
 
   async function handleDownloadZip() {
     if (!confirmExisting()) return;
-    if (dirHandle && dirActive) {
-      try {
-        const subDir = await dirHandle.getDirectoryHandle(data.id, { create: true });
-        const mdxHandle = await subDir.getFileHandle(`${data.id}.mdx`, { create: true });
-        const mdxWritable = await mdxHandle.createWritable();
-        await mdxWritable.write(mdx);
-        await mdxWritable.close();
-        for (const file of uploadedFiles) {
-          const imgHandle = await subDir.getFileHandle(file.name, { create: true });
-          const imgWritable = await imgHandle.createWritable();
-          await imgWritable.write(file);
-          await imgWritable.close();
-        }
-        setShowDownloadMenu(false);
-        return;
-      } catch {
-        alert("폴더에 저장 실패. ZIP 다운로드로 진행합니다.");
-      }
-    }
     const zip = new JSZip();
     const folder = zip.folder(data.id)!;
     folder.file(`${data.id}.mdx`, mdx);
@@ -400,6 +364,25 @@ export default function ProjectForm() {
     a.click();
     URL.revokeObjectURL(url);
     setShowDownloadMenu(false);
+  }
+
+  async function handleSaveLocal() {
+    if (!confirmExisting()) return;
+    try {
+      const formData = new FormData();
+      formData.append("projectId", data.id);
+      formData.append("mdxContent", mdx);
+      for (const file of uploadedFiles) {
+        formData.append(`image:${file.name}`, file);
+      }
+      const res = await fetch("/api/save-local", { method: "POST", body: formData });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      alert(`저장 완료: ${json.path}`);
+      setShowDownloadMenu(false);
+    } catch (e: any) {
+      alert(`저장 실패: ${e.message}`);
+    }
   }
 
   async function loadFromId(id: string) {
@@ -526,28 +509,6 @@ export default function ProjectForm() {
           >
             로컬에서 불러오기
           </button>
-          <div className="hidden lg:flex items-center border border-gray-300 rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={pickFolder}
-              disabled={!dirActive && !!dirHandle}
-              className={`px-3 py-2 text-sm transition-colors ${dirActive && dirHandle ? "text-gray-700 hover:bg-gray-50" : "text-gray-400 cursor-default"}`}
-              title={dirHandle ? `${dirHandle.name} (클릭하여 변경)` : "저장 폴더 지정"}
-            >
-              📁 {dirHandle ? dirHandle.name : "폴더 미지정"}
-            </button>
-            <div className="w-px h-5 bg-gray-300" />
-            <button
-              type="button"
-              onClick={() => setDirActive((v) => !v)}
-              className="px-3 py-2 flex items-center transition-colors hover:bg-gray-50"
-              title={dirActive ? "직접 저장 켜짐" : "직접 저장 꺼짐"}
-            >
-              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${dirActive && dirHandle ? "bg-green-500" : "bg-gray-300"}`}>
-                <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${dirActive && dirHandle ? "translate-x-4" : "translate-x-0.5"}`} />
-              </span>
-            </button>
-          </div>
           <div className="relative">
             <button
               type="button"
@@ -570,14 +531,44 @@ export default function ProjectForm() {
                 <button
                   type="button"
                   onClick={handleDownloadZip}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-b-lg border-t border-gray-100"
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-t border-gray-100"
                 >
                   ZIP (MDX + 이미지)
                   {uploadedFiles.length > 0 && <span className="ml-1 text-xs text-gray-400">{uploadedFiles.length}개</span>}
                 </button>
+                <button
+                  type="button"
+                  onClick={handleSaveLocal}
+                  disabled={!gitAvailable}
+                  title={gitAvailable === false ? "git이 설치되지 않은 환경입니다" : undefined}
+                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-b-lg border-t border-gray-100 text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  로컬에 직접 저장{gitAvailable === false ? " (git 없음)" : ""}
+                </button>
               </div>
             )}
           </div>
+
+          {/* git push 버튼 */}
+          {gitAvailable && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/git-push", { method: "POST" });
+                  const json = await res.json();
+                  if (!res.ok) throw new Error(json.error);
+                  if (json.message) { alert(json.message); return; }
+                  alert(`Push 완료\n\n${json.summary.join("\n")}`);
+                } catch (e: any) {
+                  alert(`Push 실패: ${e.message}`);
+                }
+              }}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Git Push
+            </button>
+          )}
 
           {/* 홈페이지 등록 버튼 */}
           <button
