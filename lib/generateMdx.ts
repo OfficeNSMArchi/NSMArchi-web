@@ -17,7 +17,7 @@ export interface ProjectFormData {
   location: string;
   locationKo: string;
   year: string;
-  stageType: "project" | "research" | "software" | "";
+  stageType: "design" | "research" | "software" | "";
   stage: number | "";
   client: string;
   clientKo: string;
@@ -43,7 +43,7 @@ export const defaultFormData: ProjectFormData = {
   location: "",
   locationKo: "",
   year: new Date().getFullYear().toString(),
-  stageType: "project",
+  stageType: "design",
   stage: 1,
   client: "",
   clientKo: "",

@@ -1,8 +1,8 @@
-export const STAGE_TYPES = ["project", "research", "software"] as const
+export const STAGE_TYPES = ["design", "research", "software"] as const
 export type StageType = typeof STAGE_TYPES[number]
 
 export const STAGES: Record<StageType, { key: number; ko: string; en: string }[]> = {
-  project: [
+  design: [
     { key: 0, ko: "전략기획",  en: "Strategic" },
     { key: 1, ko: "기획",      en: "Preparation" },
     { key: 2, ko: "계획설계",  en: "Concept" },
@@ -45,7 +45,7 @@ export function deriveStatus(stageType: StageType, stage: number): "planning" | 
 }
 
 export function migrateStatusToStage(status: string): { stageType: StageType; stage: number } {
-  if (status === "completed") return { stageType: "project", stage: 6 }
-  if (status === "in-progress") return { stageType: "project", stage: 3 }
-  return { stageType: "project", stage: 1 }
+  if (status === "completed") return { stageType: "design", stage: 6 }
+  if (status === "in-progress") return { stageType: "design", stage: 3 }
+  return { stageType: "design", stage: 1 }
 }

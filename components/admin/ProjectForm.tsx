@@ -731,7 +731,7 @@ export default function ProjectForm() {
                 </Field>
                 <Field label="스테이지 타입">
                   <select value={data.stageType} onChange={(e) => { set("stageType", e.target.value as ProjectFormData["stageType"]); set("stage", 0) }} className={selectCls}>
-                    <option value="project">Project</option>
+                    <option value="design">Design</option>
                     <option value="research">Research</option>
                     <option value="software">Software</option>
                   </select>
