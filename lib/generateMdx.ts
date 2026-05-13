@@ -27,6 +27,7 @@ export interface ProjectFormData {
   companies: Array<"ndb" | "snp" | "metalogic">;
   metalogicCategory: "practice" | "concept" | "research" | "academic" | "";
   ndbCategory: "project" | "research" | "";
+  snpCategory: "project" | "research" | "";
   featured: boolean;
   showOnHome: boolean;
   coverImage: string;
@@ -54,6 +55,7 @@ export const defaultFormData: ProjectFormData = {
   companies: [],
   metalogicCategory: "",
   ndbCategory: "",
+  snpCategory: "",
   featured: false,
   showOnHome: false,
   coverImage: "",
@@ -116,6 +118,10 @@ export function generateMdx(data: ProjectFormData): string {
 
   if (data.ndbCategory) {
     lines.push(`ndbCategory: ${data.ndbCategory}`);
+  }
+
+  if (data.snpCategory) {
+    lines.push(`snpCategory: ${data.snpCategory}`);
   }
 
   if (data.featured) lines.push(`featured: true`);

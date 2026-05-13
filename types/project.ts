@@ -25,6 +25,7 @@ export interface Project {
     companies: Array<"ndb" | "snp" | "metalogic">;
     metalogicCategory?: "practice" | "concept" | "research" | "academic";
     ndbCategory?: "project" | "research";
+    snpCategory?: "project" | "research";
     featured?: boolean;
     showOnHome?: boolean;
   }

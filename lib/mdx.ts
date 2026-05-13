@@ -42,6 +42,7 @@ export function getAllProjects(): Project[] {
       companies: data.companies,
       metalogicCategory: data.metalogicCategory,
       ndbCategory: data.ndbCategory,
+      snpCategory: data.snpCategory,
       featured: data.featured,
       showOnHome: data.showOnHome,
       image: resolveImgPath(id, data.coverImage),

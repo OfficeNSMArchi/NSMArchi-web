@@ -798,6 +798,15 @@ export default function ProjectForm() {
                     </select>
                   </Field>
                 )}
+                {data.companies.includes("snp") && (
+                  <Field label="SNP 카테고리">
+                    <select value={data.snpCategory} onChange={(e) => set("snpCategory", e.target.value as ProjectFormData["snpCategory"])} className={selectCls}>
+                      <option value="">— 미설정 —</option>
+                      <option value="project">project</option>
+                      <option value="research">research</option>
+                    </select>
+                  </Field>
+                )}
               </div>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">

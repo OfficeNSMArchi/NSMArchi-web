@@ -29,6 +29,7 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     companies: data.companies,
     metalogicCategory: data.metalogicCategory || undefined,
     ndbCategory: data.ndbCategory || undefined,
+    snpCategory: data.snpCategory || undefined,
     featured: data.featured,
     showOnHome: data.showOnHome,
     image: resolve(data.coverImage),
