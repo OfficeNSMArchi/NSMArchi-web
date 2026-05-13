@@ -26,6 +26,5 @@ export interface Project {
     metalogicCategory?: "practice" | "research" | "solution" | "essay" | "education" | "roots";
     ndbCategory?: "project" | "research";
     snpCategory?: "project" | "research";
-    showOnNsm?: boolean;
     visibleOn?: string[];
   }

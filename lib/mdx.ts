@@ -45,8 +45,11 @@ export function getAllProjects(): Project[] {
       metalogicCategory: data.metalogicCategory,
       ndbCategory: data.ndbCategory,
       snpCategory: data.snpCategory,
-      showOnNsm: data.showOnNsm ?? data.showOnHome,
-      visibleOn: Array.isArray(data.visibleOn) ? data.visibleOn : undefined,
+      visibleOn: Array.isArray(data.visibleOn)
+        ? data.visibleOn
+        : (data.showOnNsm || data.showOnHome)
+          ? [...(Array.isArray(data.companies) ? data.companies : []), "nsm"]
+          : undefined,
       image: resolveImgPath(id, data.coverImage),
       images: (data.images ?? []).map((f: string) => resolveImgPath(id, f)),
       content: (data.content ?? []).map((block: any) =>

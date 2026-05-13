@@ -31,7 +31,6 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     metalogicCategory: data.metalogicCategory || undefined,
     ndbCategory: data.ndbCategory || undefined,
     snpCategory: data.snpCategory || undefined,
-    showOnNsm: data.showOnNsm,
     visibleOn: data.visibleOn,
     image: resolve(data.coverImage),
     images: data.images.map(resolve),

@@ -26,7 +26,6 @@ export interface ProjectFormData {
   metalogicCategory: "practice" | "research" | "solution" | "essay" | "education" | "roots" | "";
   ndbCategory: "project" | "research" | "";
   snpCategory: "project" | "research" | "";
-  showOnNsm: boolean;
   visibleOn: string[];
   coverImage: string;
   images: string[];
@@ -52,7 +51,6 @@ export const defaultFormData: ProjectFormData = {
   metalogicCategory: "",
   ndbCategory: "",
   snpCategory: "",
-  showOnNsm: false,
   visibleOn: [],
   coverImage: "",
   images: [],
@@ -118,12 +116,12 @@ export function generateMdx(data: ProjectFormData): string {
     lines.push(`snpCategory: ${data.snpCategory}`);
   }
 
-  if (data.showOnNsm) lines.push(`showOnNsm: true`);
-
-  // visibleOn: companies와 다를 때만 출력
+  // visibleOn: brands가 companies와 다르거나 nsm 포함 시 출력
   const companiesSet = new Set(data.companies)
-  const visibleDiffers = data.visibleOn.length !== data.companies.length || data.visibleOn.some(v => !companiesSet.has(v as any))
-  if (visibleDiffers) {
+  const nonNsm = data.visibleOn.filter(v => v !== "nsm")
+  const brandsDiffer = nonNsm.length !== data.companies.length || nonNsm.some(v => !companiesSet.has(v as any))
+  const hasNsm = data.visibleOn.includes("nsm")
+  if (brandsDiffer || hasNsm) {
     lines.push(`visibleOn: [${data.visibleOn.join(", ")}]`)
   }
 

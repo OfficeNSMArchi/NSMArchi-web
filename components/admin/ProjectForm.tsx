@@ -240,15 +240,15 @@ export default function ProjectForm() {
       const companies = isAdding
         ? [...prev.companies, co]
         : prev.companies.filter((c) => c !== co)
-      const visibleOn = isAdding
+      let visibleOn = isAdding
         ? [...prev.visibleOn, co]
         : prev.visibleOn.filter((c) => c !== co)
+      if (companies.length >= 2 && !visibleOn.includes("nsm")) visibleOn = [...visibleOn, "nsm"]
       return {
         ...prev,
         companies,
         visibleOn,
         id: buildId(companyPrefix(companies), idSlug),
-        showOnNsm: companies.length >= 2 ? true : prev.showOnNsm,
       };
     });
   }
@@ -778,9 +778,9 @@ export default function ProjectForm() {
                 </div>
               </Field>
               {data.companies.length > 0 && (
-                <Field label="브랜드 노출">
+                <Field label="노출">
                   <div className="flex gap-4 mt-1">
-                    {data.companies.map((co) => (
+                    {(["ndb", "snp", "metalogic"] as const).filter(co => data.companies.includes(co)).map((co) => (
                       <label key={co} className="flex items-center gap-2 text-sm cursor-pointer">
                         <input
                           type="checkbox"
@@ -796,6 +796,20 @@ export default function ProjectForm() {
                         {co.toUpperCase()}
                       </label>
                     ))}
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={data.visibleOn.includes("nsm")}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...data.visibleOn, "nsm"]
+                            : data.visibleOn.filter((c) => c !== "nsm")
+                          set("visibleOn", next)
+                        }}
+                        className="w-4 h-4"
+                      />
+                      NSM 홈
+                    </label>
                   </div>
                 </Field>
               )}
@@ -831,12 +845,6 @@ export default function ProjectForm() {
                     </select>
                   </Field>
                 )}
-              </div>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={data.showOnNsm} onChange={(e) => set("showOnNsm", e.target.checked)} className="w-4 h-4" />
-                  NSM에 표시
-                </label>
               </div>
             </div>
           </section>

@@ -39,11 +39,12 @@ export function parseMdx(mdxString: string): ProjectFormData {
     area: data.area ?? "-",
     useType: data.useType ?? "",
     companies: Array.isArray(data.companies) ? data.companies : [],
-    visibleOn: Array.isArray(data.visibleOn) ? data.visibleOn : Array.isArray(data.companies) ? [...data.companies] : [],
+    visibleOn: Array.isArray(data.visibleOn)
+      ? data.visibleOn
+      : [...(Array.isArray(data.companies) ? data.companies : []), ...((data.showOnNsm || data.showOnHome) ? ["nsm"] : [])],
     metalogicCategory: data.metalogicCategory ?? "",
     ndbCategory: data.ndbCategory ?? "",
     snpCategory: data.snpCategory ?? "",
-    showOnNsm: data.showOnNsm ?? data.showOnHome ?? false,
     coverImage: data.coverImage ?? "",
     images: Array.isArray(data.images) ? data.images : [],
     description: data.description ?? "",
