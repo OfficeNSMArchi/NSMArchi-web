@@ -727,7 +727,7 @@ export default function ProjectForm() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <Field label="연도">
-                  <input type="text" value={data.year} onChange={(e) => set("year", e.target.value)} placeholder="2026" className={inputCls} />
+                  <input type="text" value={data.year} onChange={(e) => set("year", e.target.value)} placeholder="2026-03" className={inputCls} />
                 </Field>
                 <Field label="스테이지 타입">
                   <select value={data.stageType} onChange={(e) => { set("stageType", e.target.value as ProjectFormData["stageType"]); set("stage", 0) }} className={selectCls}>

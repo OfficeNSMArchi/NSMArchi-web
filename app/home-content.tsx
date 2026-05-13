@@ -22,7 +22,7 @@ export function HomeContent({ projects }: { projects: Project[] }) {
       return parseArea(b.area) - parseArea(a.area)
     }
     if (sortKey === "byYear") {
-      return Number(b.year) - Number(a.year)
+      return Number(b.year.slice(0, 4)) - Number(a.year.slice(0, 4))
     }
     return Number(b.year) - Number(a.year)
   })

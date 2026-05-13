@@ -173,7 +173,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                       <h2 className="font-mono font-bold tracking-tighter uppercase leading-tight mb-10" style={{ fontSize: "clamp(0.4rem,3cqw,12pt)" }}>{mainTitle}</h2>
                       <div className="mb-12 space-y-3 uppercase tracking-[0.2em] text-zinc-400 font-bold" style={{ fontSize: "clamp(0.3rem,2.5cqw,10pt)" }}>
                         <p>{t(project.locationKo, project.location)}</p>
-                        <p>{project.year}</p>
+                        <p>{project.year?.slice(0, 4)}</p>
                         <p>{project.area}</p>
                         <p>{t(project.useKo, project.use)}</p>
                       </div>

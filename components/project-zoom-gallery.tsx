@@ -263,7 +263,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                  style={{ fontSize: FONT_META }}
             >
                <p className="break-words">{language === 'ko' ? project.locationKo : project.location}</p>
-               <p>{project.year}</p>
+               <p>{project.year?.slice(0, 4)}</p>
                <p>{project.area}</p>
                <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
             </div>
