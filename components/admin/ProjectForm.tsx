@@ -236,12 +236,17 @@ export default function ProjectForm() {
 
   function toggleCompany(co: "ndb" | "snp" | "metalogic") {
     setData((prev) => {
-      const companies = prev.companies.includes(co)
-        ? prev.companies.filter((c) => c !== co)
-        : [...prev.companies, co];
+      const isAdding = !prev.companies.includes(co)
+      const companies = isAdding
+        ? [...prev.companies, co]
+        : prev.companies.filter((c) => c !== co)
+      const visibleOn = isAdding
+        ? [...prev.visibleOn, co]
+        : prev.visibleOn.filter((c) => c !== co)
       return {
         ...prev,
         companies,
+        visibleOn,
         id: buildId(companyPrefix(companies), idSlug),
         showOnNsm: companies.length >= 2 ? true : prev.showOnNsm,
       };
@@ -772,6 +777,28 @@ export default function ProjectForm() {
                   ))}
                 </div>
               </Field>
+              {data.companies.length > 0 && (
+                <Field label="브랜드 노출">
+                  <div className="flex gap-4 mt-1">
+                    {data.companies.map((co) => (
+                      <label key={co} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={data.visibleOn.includes(co)}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...data.visibleOn, co]
+                              : data.visibleOn.filter((c) => c !== co)
+                            set("visibleOn", next)
+                          }}
+                          className="w-4 h-4"
+                        />
+                        {co.toUpperCase()}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 {data.companies.includes("metalogic") && (
                   <Field label="Metalogic 카테고리">

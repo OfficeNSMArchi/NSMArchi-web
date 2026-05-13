@@ -46,6 +46,7 @@ export function getAllProjects(): Project[] {
       ndbCategory: data.ndbCategory,
       snpCategory: data.snpCategory,
       showOnNsm: data.showOnNsm ?? data.showOnHome,
+      visibleOn: Array.isArray(data.visibleOn) ? data.visibleOn : undefined,
       image: resolveImgPath(id, data.coverImage),
       images: (data.images ?? []).map((f: string) => resolveImgPath(id, f)),
       content: (data.content ?? []).map((block: any) =>

@@ -27,4 +27,5 @@ export interface Project {
     ndbCategory?: "project" | "research";
     snpCategory?: "project" | "research";
     showOnNsm?: boolean;
+    visibleOn?: string[];
   }

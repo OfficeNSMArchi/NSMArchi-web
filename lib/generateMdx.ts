@@ -27,6 +27,7 @@ export interface ProjectFormData {
   ndbCategory: "project" | "research" | "";
   snpCategory: "project" | "research" | "";
   showOnNsm: boolean;
+  visibleOn: string[];
   coverImage: string;
   images: string[];
   description: string;
@@ -52,6 +53,7 @@ export const defaultFormData: ProjectFormData = {
   ndbCategory: "",
   snpCategory: "",
   showOnNsm: false,
+  visibleOn: [],
   coverImage: "",
   images: [],
   description: "",
@@ -117,6 +119,13 @@ export function generateMdx(data: ProjectFormData): string {
   }
 
   if (data.showOnNsm) lines.push(`showOnNsm: true`);
+
+  // visibleOn: companies와 다를 때만 출력
+  const companiesSet = new Set(data.companies)
+  const visibleDiffers = data.visibleOn.length !== data.companies.length || data.visibleOn.some(v => !companiesSet.has(v as any))
+  if (visibleDiffers) {
+    lines.push(`visibleOn: [${data.visibleOn.join(", ")}]`)
+  }
 
   lines.push(`coverImage: ${data.coverImage || '""'}`);
 

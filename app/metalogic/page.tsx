@@ -2,11 +2,9 @@ import { MetalogicSiteHeader } from "@/components/metalogic-site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { allProjects } from "@/data/projects/index"
 import { MetalogicContent } from "./metalogic-content"
+import { isVisibleOn } from "@/lib/projectUtils"
 
-const hiddenOnMetaLogicPage = new Set<string>(["ml-factory", "nsm-resort"])
-const metalogicProjects = allProjects.filter(
-  (p) => p.companies.includes("metalogic") && !hiddenOnMetaLogicPage.has(p.id),
-)
+const metalogicProjects = allProjects.filter(p => isVisibleOn(p, "metalogic"))
 
 export default function MetaLogicPage() {
   return (
