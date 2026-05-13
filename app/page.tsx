@@ -4,7 +4,7 @@ import { HomeContent } from "./home-content"
 
 const homeProjects = allProjects
   .filter((p) => p.visibleOn?.includes("nsm") ?? false)
-  .sort((a, b) => Number(b.year.slice(0, 4)) - Number(a.year.slice(0, 4)))
+  .sort((a, b) => b.year.localeCompare(a.year))
 
 export default function HomePage() {
   return (
