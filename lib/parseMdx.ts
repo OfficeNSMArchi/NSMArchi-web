@@ -1,6 +1,7 @@
 import matter from "gray-matter";
 import { ProjectFormData, ContentBlock, defaultFormData } from "./generateMdx";
 import { KNOWN_FIELDS } from "./fieldSchema";
+import { migrateStatusToStage } from "./stageSchema";
 
 export function parseMdx(mdxString: string): ProjectFormData {
   const { data } = matter(mdxString);
@@ -33,7 +34,12 @@ export function parseMdx(mdxString: string): ProjectFormData {
     location: data.location ?? "",
     locationKo: data.locationKo ?? "",
     year: data.year ? String(data.year) : new Date().getFullYear().toString(),
-    status: data.status ?? "planning",
+    ...(() => {
+      if (data.stageType && data.stage !== undefined) {
+        return { stageType: data.stageType, stage: Number(data.stage) }
+      }
+      return migrateStatusToStage(data.status ?? "planning")
+    })(),
     client: data.client ?? "",
     clientKo: data.clientKo ?? "",
     area: data.area ?? "-",

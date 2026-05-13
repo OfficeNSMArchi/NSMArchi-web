@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { Project } from '@/types/project';
 import { getUseTypeLabel } from './useTypeSchema';
+import { deriveStatus, migrateStatusToStage, type StageType } from './stageSchema';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'public/projects');
 
@@ -28,11 +29,18 @@ export function getAllProjects(): Project[] {
       id,
       title: data.title,
       titleKo: data.titleKo,
-      category: data.category,
       location: data.location,
       locationKo: data.locationKo,
       year: String(data.year),
-      status: data.status,
+      ...(() => {
+        if (data.stageType && data.stage !== undefined) {
+          const stageType = data.stageType as StageType
+          const stage = Number(data.stage)
+          return { stageType, stage, status: deriveStatus(stageType, stage) }
+        }
+        const migrated = migrateStatusToStage(data.status ?? 'planning')
+        return { ...migrated, status: data.status ?? 'planning' }
+      })(),
       client: data.client,
       clientKo: data.clientKo,
       area: data.area ?? '-',

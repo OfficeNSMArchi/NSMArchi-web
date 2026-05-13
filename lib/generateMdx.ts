@@ -17,7 +17,8 @@ export interface ProjectFormData {
   location: string;
   locationKo: string;
   year: string;
-  status: "completed" | "in-progress" | "planning";
+  stageType: "project" | "research" | "software" | "";
+  stage: number | "";
   client: string;
   clientKo: string;
   area: string;
@@ -42,7 +43,8 @@ export const defaultFormData: ProjectFormData = {
   location: "",
   locationKo: "",
   year: new Date().getFullYear().toString(),
-  status: "planning",
+  stageType: "project",
+  stage: 1,
   client: "",
   clientKo: "",
   area: "-",
@@ -91,7 +93,8 @@ export function generateMdx(data: ProjectFormData): string {
   lines.push(`location: ${escapeYamlString(data.location)}`);
   lines.push(`locationKo: ${escapeYamlString(data.locationKo)}`);
   lines.push(`year: "${data.year}"`);
-  lines.push(`status: ${data.status}`);
+  if (data.stageType) lines.push(`stageType: ${data.stageType}`);
+  if (data.stage !== "") lines.push(`stage: ${data.stage}`);
   lines.push(`client: ${escapeYamlString(data.client)}`);
   lines.push(`clientKo: ${escapeYamlString(data.clientKo)}`);
   lines.push(`area: ${escapeYamlString(data.area || "-")}`);

@@ -1,6 +1,7 @@
 import { ProjectFormData } from "./generateMdx";
 import { Project } from "@/types/project";
 import { getUseTypeLabel } from "./useTypeSchema";
+import { deriveStatus, type StageType } from "./stageSchema";
 
 export function formToProject(data: ProjectFormData, blobUrls: Map<string, string>): Project {
   const id = data.id || "preview";
@@ -18,7 +19,11 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     location: data.location || "-",
     locationKo: data.locationKo || "-",
     year: data.year,
-    status: data.status,
+    stageType: data.stageType || undefined,
+    stage: data.stage !== "" ? Number(data.stage) : undefined,
+    status: data.stageType && data.stage !== ""
+      ? deriveStatus(data.stageType as StageType, Number(data.stage))
+      : "planning",
     client: data.client || "-",
     clientKo: data.clientKo || "-",
     area: data.area || "-",

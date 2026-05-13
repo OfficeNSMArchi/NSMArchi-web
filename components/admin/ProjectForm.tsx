@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ProjectFormData, defaultFormData, generateMdx } from "@/lib/generateMdx";
 import { USE_TYPES } from "@/lib/useTypeSchema";
+import { STAGE_TYPES, STAGES } from "@/lib/stageSchema";
 import { parseMdx } from "@/lib/parseMdx";
 import { formToProject } from "@/lib/formToProject";
 import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
@@ -728,11 +729,18 @@ export default function ProjectForm() {
                 <Field label="연도">
                   <input type="text" value={data.year} onChange={(e) => set("year", e.target.value)} placeholder="2026" className={inputCls} />
                 </Field>
-                <Field label="상태">
-                  <select value={data.status} onChange={(e) => set("status", e.target.value as ProjectFormData["status"])} className={selectCls}>
-                    <option value="planning">planning</option>
-                    <option value="in-progress">in-progress</option>
-                    <option value="completed">completed</option>
+                <Field label="스테이지 타입">
+                  <select value={data.stageType} onChange={(e) => { set("stageType", e.target.value as ProjectFormData["stageType"]); set("stage", 0) }} className={selectCls}>
+                    <option value="project">Project</option>
+                    <option value="research">Research</option>
+                    <option value="software">Software</option>
+                  </select>
+                </Field>
+                <Field label="단계">
+                  <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls}>
+                    {(STAGES[data.stageType as keyof typeof STAGES] ?? STAGES.project).map((s) => (
+                      <option key={s.key} value={s.key}>{s.key} — {s.ko}</option>
+                    ))}
                   </select>
                 </Field>
                 <Field label="연면적">

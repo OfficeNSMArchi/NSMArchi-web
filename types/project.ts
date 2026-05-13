@@ -8,6 +8,8 @@ export interface Project {
     locationKo: string;
     year: string;
     status: "completed" | "in-progress" | "planning";
+    stageType?: "project" | "research" | "software";
+    stage?: number;
     client: string;
     clientKo: string;
     area: string;
