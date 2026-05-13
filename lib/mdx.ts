@@ -41,6 +41,7 @@ export function getAllProjects(): Project[] {
       descriptionKo: data.descriptionKo ?? 'To be updated',
       companies: data.companies,
       metalogicCategory: data.metalogicCategory,
+      ndbCategory: data.ndbCategory,
       featured: data.featured,
       showOnHome: data.showOnHome,
       image: resolveImgPath(id, data.coverImage),

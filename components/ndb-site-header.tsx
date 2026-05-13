@@ -7,6 +7,8 @@ import { useNdbCategory, type NdbCategoryKey } from "@/components/ndb-category-p
 
 const categories: { key: NdbCategoryKey; label: string }[] = [
   { key: "all", label: "ALL" },
+  { key: "project", label: "PROJECT" },
+  { key: "research", label: "RESEARCH" },
 ]
 
 export function NdbSiteHeader() {

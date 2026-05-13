@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react"
 
-export type NdbCategoryKey = "all"
+export type NdbCategoryKey = "all" | "project" | "research"
 
 const NdbCategoryContext = createContext<{
   selectedCategory: NdbCategoryKey

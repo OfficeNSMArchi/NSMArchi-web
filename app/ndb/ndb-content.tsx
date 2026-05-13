@@ -40,7 +40,10 @@ const featuredProjects = [
 ];
 
 export function NdbContent({ ndbProjects }: { ndbProjects: Project[] }) {
-  useNdbCategory();
+  const { selectedCategory } = useNdbCategory();
+  const filteredProjects = selectedCategory === "all"
+    ? ndbProjects
+    : ndbProjects.filter((p) => p.ndbCategory === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-h, 48px)' }}>
@@ -97,7 +100,11 @@ export function NdbContent({ ndbProjects }: { ndbProjects: Project[] }) {
       <section id="projects" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-16 text-center italic tracking-tight">Featured Works</h2>
-          <ProjectZoomGallery storageKey="ndb" projects={ndbProjects} />
+          {filteredProjects.length === 0 ? (
+            <p className="mt-8 text-sm text-slate-400">No projects yet in this category.</p>
+          ) : (
+            <ProjectZoomGallery storageKey="ndb" projects={filteredProjects} />
+          )}
         </div>
       </section>
 

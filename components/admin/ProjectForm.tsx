@@ -778,15 +778,26 @@ export default function ProjectForm() {
                     <option value="research">research</option>
                   </select>
                 </Field>
-                <Field label="Metalogic 카테고리">
-                  <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
-                    <option value="">— 미설정 —</option>
-                    <option value="practice">practice</option>
-                    <option value="concept">concept</option>
-                    <option value="research">research</option>
-                    <option value="academic">academic</option>
-                  </select>
-                </Field>
+                {data.companies.includes("metalogic") && (
+                  <Field label="Metalogic 카테고리">
+                    <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
+                      <option value="">— 미설정 —</option>
+                      <option value="practice">practice</option>
+                      <option value="concept">concept</option>
+                      <option value="research">research</option>
+                      <option value="academic">academic</option>
+                    </select>
+                  </Field>
+                )}
+                {data.companies.includes("ndb") && (
+                  <Field label="NDB 카테고리">
+                    <select value={data.ndbCategory} onChange={(e) => set("ndbCategory", e.target.value as ProjectFormData["ndbCategory"])} className={selectCls}>
+                      <option value="">— 미설정 —</option>
+                      <option value="project">project</option>
+                      <option value="research">research</option>
+                    </select>
+                  </Field>
+                )}
               </div>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">

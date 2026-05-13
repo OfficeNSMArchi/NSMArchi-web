@@ -42,6 +42,7 @@ export function parseMdx(mdxString: string): ProjectFormData {
     category: data.category ?? "",
     companies: Array.isArray(data.companies) ? data.companies : [],
     metalogicCategory: data.metalogicCategory ?? "",
+    ndbCategory: data.ndbCategory ?? "",
     featured: data.featured ?? false,
     showOnHome: data.showOnHome ?? false,
     coverImage: data.coverImage ?? "",
