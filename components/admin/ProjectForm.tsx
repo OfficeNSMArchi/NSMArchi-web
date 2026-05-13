@@ -738,8 +738,8 @@ export default function ProjectForm() {
                 </Field>
                 <Field label="단계">
                   <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls}>
-                    {(STAGES[data.stageType as keyof typeof STAGES] ?? STAGES.project).map((s) => (
-                      <option key={s.key} value={s.key}>{s.key} — {s.ko}</option>
+                    {(STAGES[data.stageType as keyof typeof STAGES] ?? STAGES.design).map((s) => (
+                      <option key={s.key} value={s.key}>{s.key} — {s.ko}{s.hint ? ` (${s.hint})` : ""}</option>
                     ))}
                   </select>
                 </Field>
