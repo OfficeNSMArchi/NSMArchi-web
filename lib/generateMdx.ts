@@ -21,11 +21,9 @@ export interface ProjectFormData {
   client: string;
   clientKo: string;
   area: string;
-  use: string;
-  useKo: string;
-  category: "design" | "research" | "";
+  useType: import("./useTypeSchema").UseTypeKey;
   companies: Array<"ndb" | "snp" | "metalogic">;
-  metalogicCategory: "practice" | "concept" | "research" | "academic" | "";
+  metalogicCategory: "practice" | "research" | "solution" | "essay" | "education" | "roots" | "";
   ndbCategory: "project" | "research" | "";
   snpCategory: "project" | "research" | "";
   featured: boolean;
@@ -49,9 +47,7 @@ export const defaultFormData: ProjectFormData = {
   client: "",
   clientKo: "",
   area: "-",
-  use: "-",
-  useKo: "-",
-  category: "",
+  useType: "",
   companies: [],
   metalogicCategory: "",
   ndbCategory: "",
@@ -101,11 +97,9 @@ export function generateMdx(data: ProjectFormData): string {
   lines.push(`client: ${escapeYamlString(data.client)}`);
   lines.push(`clientKo: ${escapeYamlString(data.clientKo)}`);
   lines.push(`area: ${escapeYamlString(data.area || "-")}`);
-  lines.push(`use: ${escapeYamlString(data.use || "-")}`);
-  lines.push(`useKo: ${escapeYamlString(data.useKo || "-")}`);
 
-  if (data.category) {
-    lines.push(`category: ${data.category}`);
+  if (data.useType) {
+    lines.push(`useType: ${data.useType}`);
   }
 
   if (data.companies.length > 0) {

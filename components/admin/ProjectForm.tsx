@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ProjectFormData, defaultFormData, generateMdx } from "@/lib/generateMdx";
+import { USE_TYPES } from "@/lib/useTypeSchema";
 import { parseMdx } from "@/lib/parseMdx";
 import { formToProject } from "@/lib/formToProject";
 import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
@@ -740,14 +741,14 @@ export default function ProjectForm() {
                   <input type="text" value={data.clientKo} onChange={(e) => set("clientKo", e.target.value)} placeholder="서울시" className={inputCls} />
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="용도 (영어)">
-                  <input type="text" value={data.use} onChange={(e) => set("use", e.target.value)} placeholder="Mixed-use" className={inputCls} />
-                </Field>
-                <Field label="용도 (한국어)">
-                  <input type="text" value={data.useKo} onChange={(e) => set("useKo", e.target.value)} placeholder="복합시설" className={inputCls} />
-                </Field>
-              </div>
+              <Field label="건물 용도">
+                <select value={data.useType} onChange={(e) => set("useType", e.target.value as ProjectFormData["useType"])} className={selectCls}>
+                  <option value="">— 미설정 —</option>
+                  {USE_TYPES.map((t) => (
+                    <option key={t.key} value={t.key}>{t.ko} ({t.en})</option>
+                  ))}
+                </select>
+              </Field>
             </div>
           </section>
 
@@ -782,10 +783,12 @@ export default function ProjectForm() {
                   <Field label="Metalogic 카테고리">
                     <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
                       <option value="">— 미설정 —</option>
-                      <option value="practice">practice</option>
-                      <option value="concept">concept</option>
-                      <option value="research">research</option>
-                      <option value="academic">academic</option>
+                      <option value="practice">Practice</option>
+                      <option value="research">Logic / Research</option>
+                      <option value="solution">Logic / Solutions</option>
+                      <option value="essay">Insight / Essay</option>
+                      <option value="education">Insight / Education</option>
+                      <option value="roots">Insight / Roots</option>
                     </select>
                   </Field>
                 )}

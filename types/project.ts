@@ -11,9 +11,10 @@ export interface Project {
     status: "completed" | "in-progress" | "planning";
     client: string;
     clientKo: string;
-    area: string; // 연면적
-    use: string; // 용도
-    useKo: string; // 용도 한글
+    area: string;
+    useType?: string;
+    use: string;
+    useKo: string;
     image: string;
     images?: string[];
     description: string;
@@ -23,7 +24,7 @@ export interface Project {
       | { type: "text"; title?: { ko: string; en: string }; body: { ko: string; en: string }; }
     >;
     companies: Array<"ndb" | "snp" | "metalogic">;
-    metalogicCategory?: "practice" | "concept" | "research" | "academic";
+    metalogicCategory?: "practice" | "research" | "solution" | "essay" | "education" | "roots";
     ndbCategory?: "project" | "research";
     snpCategory?: "project" | "research";
     featured?: boolean;

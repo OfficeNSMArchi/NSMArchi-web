@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { Project } from '@/types/project';
+import { getUseTypeLabel } from './useTypeSchema';
 
 const PROJECTS_DIR = path.join(process.cwd(), 'public/projects');
 
@@ -35,8 +36,9 @@ export function getAllProjects(): Project[] {
       client: data.client,
       clientKo: data.clientKo,
       area: data.area ?? '-',
-      use: data.use ?? '-',
-      useKo: data.useKo ?? '-',
+      useType: data.useType ?? '',
+      use: data.useType ? getUseTypeLabel(data.useType, 'en') : (data.use ?? '-'),
+      useKo: data.useType ? getUseTypeLabel(data.useType, 'ko') : (data.useKo ?? '-'),
       description: data.description ?? 'To be updated',
       descriptionKo: data.descriptionKo ?? 'To be updated',
       companies: data.companies,

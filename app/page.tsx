@@ -4,12 +4,7 @@ import { HomeContent } from "./home-content"
 
 const homeProjects = allProjects
   .filter((p) => p.showOnHome)
-  .sort((a, b) => {
-    const aIsResearch = a.category === "research"
-    const bIsResearch = b.category === "research"
-    if (aIsResearch !== bIsResearch) return aIsResearch ? 1 : -1
-    return Number(b.year) - Number(a.year)
-  })
+  .sort((a, b) => Number(b.year) - Number(a.year))
 
 export default function HomePage() {
   return (

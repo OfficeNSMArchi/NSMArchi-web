@@ -1,5 +1,6 @@
 import { ProjectFormData } from "./generateMdx";
 import { Project } from "@/types/project";
+import { getUseTypeLabel } from "./useTypeSchema";
 
 export function formToProject(data: ProjectFormData, blobUrls: Map<string, string>): Project {
   const id = data.id || "preview";
@@ -22,8 +23,9 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     client: data.client || "-",
     clientKo: data.clientKo || "-",
     area: data.area || "-",
-    use: data.use || "-",
-    useKo: data.useKo || "-",
+    useType: data.useType || undefined,
+    use: data.useType ? getUseTypeLabel(data.useType, "en") : "-",
+    useKo: data.useType ? getUseTypeLabel(data.useType, "ko") : "-",
     description: data.description || "To be updated",
     descriptionKo: data.descriptionKo || "To be updated",
     companies: data.companies,
