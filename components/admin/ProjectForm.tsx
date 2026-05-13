@@ -749,7 +749,13 @@ export default function ProjectForm() {
                 )}
                 <Field label="연면적">
                   <div className="flex items-center gap-2">
-                    <input type="text" inputMode="numeric" value={data.area === "-" ? "" : data.area} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ""); set("area", val || "-") }} placeholder="7844" className={inputCls} />
+                    <input
+                      type="text" inputMode="numeric"
+                      value={data.area === "-" ? "" : data.area}
+                      onKeyDown={(e) => { if (!/[0-9]/.test(e.key) && !["Backspace","Delete","ArrowLeft","ArrowRight","Tab"].includes(e.key)) e.preventDefault() }}
+                      onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ""); set("area", val || "-") }}
+                      placeholder="7844" className={inputCls}
+                    />
                     <span className="text-sm text-gray-500 shrink-0">m²</span>
                     {getSizeLabel(data.area) && (
                       <span className="text-xs font-bold text-gray-400 shrink-0">{getSizeLabel(data.area)}</span>
