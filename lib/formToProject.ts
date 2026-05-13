@@ -15,7 +15,6 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     id: data.id || "preview",
     title: data.title || "Untitled",
     titleKo: data.titleKo || "제목 없음",
-    category: data.category || undefined,
     location: data.location || "-",
     locationKo: data.locationKo || "-",
     year: data.year,
@@ -32,8 +31,7 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     metalogicCategory: data.metalogicCategory || undefined,
     ndbCategory: data.ndbCategory || undefined,
     snpCategory: data.snpCategory || undefined,
-    featured: data.featured,
-    showOnHome: data.showOnHome,
+    showOnNsm: data.showOnNsm,
     image: resolve(data.coverImage),
     images: data.images.map(resolve),
     content: data.content.map((block) => {

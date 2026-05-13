@@ -45,8 +45,7 @@ export function getAllProjects(): Project[] {
       metalogicCategory: data.metalogicCategory,
       ndbCategory: data.ndbCategory,
       snpCategory: data.snpCategory,
-      featured: data.featured,
-      showOnHome: data.showOnHome,
+      showOnNsm: data.showOnNsm ?? data.showOnHome,
       image: resolveImgPath(id, data.coverImage),
       images: (data.images ?? []).map((f: string) => resolveImgPath(id, f)),
       content: (data.content ?? []).map((block: any) =>

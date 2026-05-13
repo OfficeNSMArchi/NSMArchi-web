@@ -243,6 +243,7 @@ export default function ProjectForm() {
         ...prev,
         companies,
         id: buildId(companyPrefix(companies), idSlug),
+        showOnNsm: companies.length >= 2 ? true : prev.showOnNsm,
       };
     });
   }
@@ -806,12 +807,8 @@ export default function ProjectForm() {
               </div>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={data.featured} onChange={(e) => set("featured", e.target.checked)} className="w-4 h-4" />
-                  featured (홈 메인 노출)
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={data.showOnHome} onChange={(e) => set("showOnHome", e.target.checked)} className="w-4 h-4" />
-                  showOnHome (홈 목록 노출)
+                  <input type="checkbox" checked={data.showOnNsm} onChange={(e) => set("showOnNsm", e.target.checked)} className="w-4 h-4" />
+                  NSM에 표시
                 </label>
               </div>
             </div>

@@ -4,17 +4,17 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
-import { useNsmCategory, type NsmCategoryKey } from "@/components/nsm-category-provider"
+import { useNsmCategory, type NsmSortKey } from "@/components/nsm-category-provider"
 
-const categories: { key: NsmCategoryKey; label: string }[] = [
-  { key: "all", label: "ALL" },
-  { key: "residential", label: "RESIDENTIAL" },
-  { key: "commercial", label: "COMMERCIAL" },
-  { key: "public", label: "PUBLIC" },
+const SORT_ITEMS: { key: NsmSortKey; label: string }[] = [
+  { key: "default",  label: "ALL" },
+  { key: "byUse",   label: "BY USE" },
+  { key: "bySize",  label: "BY SIZE" },
+  { key: "byYear",  label: "BY YEAR" },
 ]
 
 export function NsmSiteHeader() {
-  const { selectedCategory, setSelectedCategory } = useNsmCategory()
+  const { sortKey, setSortKey } = useNsmCategory()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -22,21 +22,21 @@ export function NsmSiteHeader() {
     <SiteHeader
       dropdownItems={(onClose) => (
         <>
-          {categories.map((cat) => (
-            <div key={cat.key} className="flex items-center gap-1">
+          {SORT_ITEMS.map((item) => (
+            <div key={item.key} className="flex items-center gap-1">
               <button
                 onClick={() => {
                   if (pathname !== "/") { router.push("/"); onClose(); return }
-                  setSelectedCategory(cat.key); onClose()
+                  setSortKey(item.key); onClose()
                 }}
                 className={cn(
                   "text-[10px] font-medium text-foreground transition-opacity",
-                  selectedCategory === cat.key ? "opacity-100" : "opacity-40 hover:opacity-70"
+                  sortKey === item.key ? "opacity-100" : "opacity-40 hover:opacity-70"
                 )}
               >
-                {cat.label}
+                {item.label}
               </button>
-              {cat.key === "all" && (
+              {item.key === "default" && (
                 <>
                   <span className="text-[10px] text-foreground opacity-20">/</span>
                   <button

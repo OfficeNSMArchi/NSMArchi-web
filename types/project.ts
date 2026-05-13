@@ -4,7 +4,6 @@ export interface Project {
     id: string;
     title: string;
     titleKo: string;
-    category?: "design" | "research";
     location: string;
     locationKo: string;
     year: string;
@@ -27,6 +26,5 @@ export interface Project {
     metalogicCategory?: "practice" | "research" | "solution" | "essay" | "education" | "roots";
     ndbCategory?: "project" | "research";
     snpCategory?: "project" | "research";
-    featured?: boolean;
-    showOnHome?: boolean;
+    showOnNsm?: boolean;
   }

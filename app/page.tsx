@@ -3,7 +3,7 @@ import { allProjects } from "@/data/projects/index"
 import { HomeContent } from "./home-content"
 
 const homeProjects = allProjects
-  .filter((p) => p.showOnHome)
+  .filter((p) => p.showOnNsm)
   .sort((a, b) => Number(b.year) - Number(a.year))
 
 export default function HomePage() {
