@@ -107,6 +107,7 @@ export default function ProjectForm() {
   const [slugSync, setSlugSync] = useState(false);
   const [existingProjects, setExistingProjects] = useState<{id: string; title: string; titleKo: string}[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [projectsRefreshIn, setProjectsRefreshIn] = useState(30);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [gitAvailable, setGitAvailable] = useState<boolean | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
@@ -142,6 +143,17 @@ export default function ProjectForm() {
     }
 
     loadProjects();
+
+    const ticker = setInterval(() => {
+      setProjectsRefreshIn((n) => {
+        if (n <= 1) {
+          loadProjects();
+          return 30;
+        }
+        return n - 1;
+      });
+    }, 1000);
+    return () => clearInterval(ticker);
   }, []);
 
   useEffect(() => {
@@ -536,20 +548,22 @@ export default function ProjectForm() {
                   ZIP (MDX + 이미지)
                   {uploadedFiles.length > 0 && <span className="ml-1 text-xs text-gray-400">{uploadedFiles.length}개</span>}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSaveLocal}
-                  disabled={!gitAvailable}
-                  title={gitAvailable === false ? "git이 설치되지 않은 환경입니다" : undefined}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 rounded-b-lg border-t border-gray-100 text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  로컬에 직접 저장{gitAvailable === false ? " (git 없음)" : ""}
-                </button>
               </div>
             )}
           </div>
 
-          {/* git push 버튼 */}
+          {/* 로컬 저장 + git push 버튼 */}
+          {gitAvailable && (
+            <button
+              type="button"
+              onClick={handleSaveLocal}
+              disabled={validationErrors.length > 0}
+              title={validationErrors.length > 0 ? validationErrors.map((e) => `${e} 누락`).join(", ") : "로컬에 직접 저장"}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              Git Save
+            </button>
+          )}
           {gitAvailable && (
             <button
               type="button"
@@ -1028,6 +1042,7 @@ export default function ProjectForm() {
             errors={validationErrors}
             existingProjects={existingProjects}
             projectsLoaded={projectsLoaded}
+            projectsRefreshIn={projectsRefreshIn}
             onLoadProject={loadFromId}
             onDeleteProject={session ? async (id) => {
               const res = await fetch("/api/delete-project", {

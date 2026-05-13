@@ -4,7 +4,8 @@ export const USE_TYPES = [
   { key: "office",       ko: "업무시설",  en: "Office" },
   { key: "commercial",   ko: "상업",      en: "Commercial" },
   { key: "neighborhood", ko: "근생",      en: "Neighborhood Facility" },
-  { key: "mixed-use",    ko: "주상복합",  en: "Mixed-use" },
+  { key: "mixed-use",             ko: "복합시설",  en: "Mixed-use" },
+  { key: "residential-commercial", ko: "주상복합",  en: "Residential-Commercial" },
   { key: "industrial",   ko: "공업",      en: "Industrial" },
   { key: "interior",     ko: "인테리어",  en: "Interior" },
 ] as const;

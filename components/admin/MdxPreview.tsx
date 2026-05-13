@@ -48,11 +48,12 @@ interface Props {
   errors?: string[];
   existingProjects?: ExistingProject[];
   projectsLoaded?: boolean;
+  projectsRefreshIn?: number;
   onLoadProject?: (id: string) => void;
   onDeleteProject?: (id: string) => Promise<void>;
 }
 
-export default function MdxPreview({ mdx, projectId, errors = [], existingProjects = [], projectsLoaded = false, onLoadProject, onDeleteProject }: Props) {
+export default function MdxPreview({ mdx, projectId, errors = [], existingProjects = [], projectsLoaded = false, projectsRefreshIn, onLoadProject, onDeleteProject }: Props) {
   const [tab, setTab] = useState<"list" | "mdx" | "schema">("list");
   const [copied, setCopied] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -104,6 +105,9 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
           onClick={() => setTab("list")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "list" ? "border-gray-900 text-gray-900" : "border-transparent text-gray-400 hover:text-gray-600"}`}
         >
+          {projectsRefreshIn !== undefined && (
+            <span className="mr-1.5 text-xs text-gray-300">↻{projectsRefreshIn}s</span>
+          )}
           기존 프로젝트
           {existingProjects.length > 0 && (
             <span className="ml-1.5 text-xs text-gray-400">{existingProjects.length}</span>

@@ -7,7 +7,7 @@ const PROJECT_ROOT = process.cwd();
 
 export async function POST() {
   try {
-    await execAsync("git add .", { cwd: PROJECT_ROOT });
+    await execAsync("git add public/projects/", { cwd: PROJECT_ROOT });
 
     const { stdout: statusOut } = await execAsync("git status --porcelain", { cwd: PROJECT_ROOT });
     if (!statusOut.trim()) {
