@@ -10,6 +10,7 @@ import { formToProject } from "@/lib/formToProject";
 import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
 import JSZip from "jszip";
 import { Lock, LockOpen } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ContentBlockEditor from "./ContentBlockEditor";
 import MdxPreview from "./MdxPreview";
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -711,24 +712,57 @@ export default function ProjectForm() {
                 </div>
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="제목 (영어)" required>
-                  <input type="text" value={data.title} onChange={(e) => set("title", e.target.value)} placeholder="Buam-dong Complex" className={inputCls} />
-                </Field>
                 <Field label="제목 (한국어)" required>
                   <input type="text" value={data.titleKo} onChange={(e) => set("titleKo", e.target.value)} placeholder="부암동 복합시설" className={inputCls} />
                 </Field>
+                <Field label="제목 (영어)" required>
+                  <input type="text" value={data.title} onChange={(e) => set("title", e.target.value)} placeholder="Buam-dong Complex" className={inputCls} />
+                </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="위치 (영어)" required>
-                  <input type="text" value={data.location} onChange={(e) => set("location", e.target.value)} placeholder="Seoul, Korea" className={inputCls} />
-                </Field>
                 <Field label="위치 (한국어)" required>
                   <input type="text" value={data.locationKo} onChange={(e) => set("locationKo", e.target.value)} placeholder="서울, 한국" className={inputCls} />
                 </Field>
+                <Field label="위치 (영어)" required>
+                  <input type="text" value={data.location} onChange={(e) => set("location", e.target.value)} placeholder="Seoul, Korea" className={inputCls} />
+                </Field>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <Field label="연도">
-                  <input type="text" value={data.year} onChange={(e) => set("year", e.target.value)} placeholder="2026-03" className={inputCls} />
+                  <div className="flex gap-1">
+                    <Select
+                      value={data.year?.slice(0, 4) || "__none__"}
+                      onValueChange={(v) => {
+                        const y = v === "__none__" ? "" : v
+                        const m = data.year?.slice(5, 7) ?? ""
+                        set("year", y ? (m ? `${y}-${m}` : y) : "")
+                      }}
+                    >
+                      <SelectTrigger className="w-28"><SelectValue placeholder="연도" /></SelectTrigger>
+                      <SelectContent side="bottom">
+                        <SelectItem value="__none__">연도</SelectItem>
+                        {Array.from({ length: new Date().getFullYear() - 1990 + 1 }, (_, i) => String(new Date().getFullYear() - i)).map(y => (
+                          <SelectItem key={y} value={y}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={data.year?.slice(5, 7) || "__none__"}
+                      onValueChange={(v) => {
+                        const m = v === "__none__" ? "" : v
+                        const y = data.year?.slice(0, 4) ?? ""
+                        set("year", m ? `${y}-${m}` : y)
+                      }}
+                    >
+                      <SelectTrigger className="w-20"><SelectValue placeholder="월" /></SelectTrigger>
+                      <SelectContent side="bottom">
+                        <SelectItem value="__none__">월</SelectItem>
+                        {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")).map(m => (
+                          <SelectItem key={m} value={m}>{m}월</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </Field>
                 <Field label="스테이지 타입">
                   <select value={data.stageType} onChange={(e) => { set("stageType", e.target.value as ProjectFormData["stageType"]); set("stage", 0) }} className={selectCls}>
@@ -738,15 +772,16 @@ export default function ProjectForm() {
                     <option value="software">Software</option>
                   </select>
                 </Field>
-                {data.stageType && (
-                  <Field label="단계">
-                    <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls}>
-                      {(STAGES[data.stageType as keyof typeof STAGES]).map((s) => (
-                        <option key={s.key} value={s.key}>{s.key} — {s.ko}{s.hint ? ` (${s.hint})` : ""}</option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
+                <Field label="단계">
+                  <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls} disabled={!data.stageType}>
+                    {data.stageType
+                      ? (STAGES[data.stageType as keyof typeof STAGES]).map((s) => (
+                          <option key={s.key} value={s.key}>{s.key} — {s.ko}{s.hint ? ` (${s.hint})` : ""}</option>
+                        ))
+                      : <option value="">— 스테이지 타입 선택 후 설정 —</option>
+                    }
+                  </select>
+                </Field>
                 <Field label="연면적">
                   <div className="flex items-center gap-2">
                     <input
@@ -764,11 +799,11 @@ export default function ProjectForm() {
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="클라이언트 (영어)" required>
-                  <input type="text" value={data.client} onChange={(e) => set("client", e.target.value)} placeholder="Seoul City" className={inputCls} />
-                </Field>
                 <Field label="클라이언트 (한국어)" required>
                   <input type="text" value={data.clientKo} onChange={(e) => set("clientKo", e.target.value)} placeholder="서울시" className={inputCls} />
+                </Field>
+                <Field label="클라이언트 (영어)" required>
+                  <input type="text" value={data.client} onChange={(e) => set("client", e.target.value)} placeholder="Seoul City" className={inputCls} />
                 </Field>
               </div>
               <Field label="건물 용도">

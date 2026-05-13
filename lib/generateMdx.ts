@@ -42,7 +42,7 @@ export const defaultFormData: ProjectFormData = {
   titleKo: "",
   location: "",
   locationKo: "",
-  year: new Date().getFullYear().toString(),
+  year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`,
   stageType: "design",
   stage: 1,
   client: "",
