@@ -33,6 +33,7 @@ export interface ProjectFormData {
   description: string;
   descriptionKo: string;
   content: ContentBlock[];
+  extraFields: Record<string, string>;
 }
 
 export const defaultFormData: ProjectFormData = {
@@ -58,6 +59,7 @@ export const defaultFormData: ProjectFormData = {
   description: "",
   descriptionKo: "",
   content: [],
+  extraFields: {},
 };
 
 export const REQUIRED_FORM_FIELDS = new Set([
@@ -141,6 +143,10 @@ export function generateMdx(data: ProjectFormData): string {
       }
     });
   }
+
+  Object.entries(data.extraFields ?? {}).forEach(([k, v]) => {
+    if (k && v !== undefined) lines.push(`${k}: ${escapeYamlString(v)}`);
+  });
 
   lines.push(`---`);
   lines.push(``);

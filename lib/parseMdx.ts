@@ -1,5 +1,6 @@
 import matter from "gray-matter";
 import { ProjectFormData, ContentBlock, defaultFormData } from "./generateMdx";
+import { KNOWN_FIELDS } from "./fieldSchema";
 
 export function parseMdx(mdxString: string): ProjectFormData {
   const { data } = matter(mdxString);
@@ -15,6 +16,13 @@ export function parseMdx(mdxString: string): ProjectFormData {
       bodyKo: block.bodyKo ?? "",
       bodyEn: block.bodyEn ?? "",
     };
+  });
+
+  const extraFields: Record<string, string> = {};
+  Object.keys(data).forEach((key) => {
+    if (!KNOWN_FIELDS.has(key)) {
+      extraFields[key] = String(data[key] ?? "");
+    }
   });
 
   return {
@@ -41,5 +49,6 @@ export function parseMdx(mdxString: string): ProjectFormData {
     description: data.description ?? "",
     descriptionKo: data.descriptionKo ?? "",
     content,
+    extraFields,
   };
 }

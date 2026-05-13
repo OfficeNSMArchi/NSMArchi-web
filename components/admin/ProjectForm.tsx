@@ -256,6 +256,26 @@ export default function ProjectForm() {
     setData((prev) => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }));
   }
 
+  function addExtraField() {
+    setData((prev) => ({ ...prev, extraFields: { ...prev.extraFields, "": "" } }));
+  }
+  function removeExtraField(key: string) {
+    setData((prev) => {
+      const next = { ...prev.extraFields };
+      delete next[key];
+      return { ...prev, extraFields: next };
+    });
+  }
+  function renameExtraField(oldKey: string, newKey: string) {
+    setData((prev) => {
+      const next: Record<string, string> = {};
+      Object.entries(prev.extraFields).forEach(([k, v]) => {
+        next[k === oldKey ? newKey : k] = v;
+      });
+      return { ...prev, extraFields: next };
+    });
+  }
+
   function loadFromText(text: string, images?: File[]) {
     try {
       const parsed = parseMdx(text);
@@ -883,6 +903,37 @@ export default function ProjectForm() {
               onChange={(blocks) => set("content", blocks)}
               images={data.images}
             />
+          </section>
+
+          {/* 6. 추가 필드 */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">추가 필드</h2>
+            <div className="space-y-2">
+              {Object.entries(data.extraFields).map(([k, v]) => (
+                <div key={k} className="flex gap-2 items-center">
+                  <input
+                    value={k}
+                    onChange={(e) => renameExtraField(k, e.target.value)}
+                    placeholder="필드명"
+                    className="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                  <input
+                    value={v}
+                    onChange={(e) => set("extraFields", { ...data.extraFields, [k]: e.target.value })}
+                    placeholder="값"
+                    className={`${inputCls} flex-1`}
+                  />
+                  <button type="button" onClick={() => removeExtraField(k)} className="text-red-400 hover:text-red-600 px-2 text-lg leading-none">×</button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addExtraField}
+                className="px-3 py-1.5 text-sm border border-dashed border-gray-300 rounded-lg hover:bg-gray-50 text-gray-500"
+              >
+                + 필드 추가
+              </button>
+            </div>
           </section>
 
         </div>
