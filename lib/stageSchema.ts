@@ -10,6 +10,7 @@ export const STAGES: Record<StageType, { key: number; ko: string; en: string }[]
     { key: 4, ko: "실시설계",  en: "Technical" },
     { key: 5, ko: "시공중",    en: "Construction" },
     { key: 6, ko: "준공",      en: "Handover" },
+    { key: 7, ko: "유지관리",  en: "Use" },
   ],
   research: [
     { key: 0, ko: "기획",    en: "Planning" },
