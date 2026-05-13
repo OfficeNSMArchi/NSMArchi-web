@@ -772,13 +772,6 @@ export default function ProjectForm() {
                 </div>
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="카테고리">
-                  <select value={data.category} onChange={(e) => set("category", e.target.value as ProjectFormData["category"])} className={selectCls}>
-                    <option value="">— 미설정 —</option>
-                    <option value="design">design</option>
-                    <option value="research">research</option>
-                  </select>
-                </Field>
                 {data.companies.includes("metalogic") && (
                   <Field label="Metalogic 카테고리">
                     <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
