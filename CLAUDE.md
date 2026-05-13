@@ -54,17 +54,46 @@ const MARGIN_STYLE = { width: 'var(--margin-w)', ... };
 
 `components/admin/ProjectForm.tsx` — 핵심 기능:
 - 프로젝트 ID 자동 생성 (회사 prefix + slug, Lock/Unlock 토글)
-- 폼 입력 → MDX 생성 + ZIP 다운로드 (혹은 파일시스템 직접 저장)
+- 폼 입력 → MDX 생성 + ZIP 다운로드
 - `localStorage` 임시저장 / 복원 (draft 기능)
-- 기존 프로젝트 목록 `/api/project-ids`로 불러와 ID 중복 체크
+- 기존 프로젝트 목록 `/api/project-ids`로 불러와 ID 중복 체크 (30초마다 자동 갱신)
 - `ContentBlockEditor` — 콘텐츠 블록(텍스트/이미지) 편집
-- `MdxPreview` — MDX 미리보기
+- `MdxPreview` — MDX 미리보기 + 기존 프로젝트 목록
 - 하단에 `ProjectZoomGallery` 미리보기 스트립 (auto-expand)
 - 1280px 미만에서 narrow 레이아웃 전환
+
+### 어드민 헤더 버튼 (왼→오)
+1. 로컬에서 불러오기
+2. 다운로드 ▾ (MDX만 / ZIP)
+3. **Git Save** — git pull 후 `public/projects/{id}/` 에 MDX+이미지 저장 (git 있을 때만 활성)
+4. **Git Push** — `public/projects/`만 add → 자동 커밋메시지(날짜+변경파일) → push (git 있을 때만 활성)
+5. 홈페이지에 등록 (GitHub API 커밋, Google 로그인 필요)
+
+### Git Save / Git Push 관련 API
+- `app/api/save-local/route.ts` — GET: git 감지, POST: git pull + 파일 저장 (multipart)
+- `app/api/git-push/route.ts` — POST: git add public/projects/ → commit → push
+
+### 프로젝트 스키마 필드 (2026-05-13 정리)
+- `visibleOn: string[]` — 노출 브랜드 제어 ("ndb"|"snp"|"metalogic"|"nsm")
+- `stageType: "design"|"research"|"software"|""` — 단계 타입
+- `stage: number` — 단계 번호 (stageType에 따라 다른 레이블)
+- `useType` — 건물 용도 (`lib/useTypeSchema.ts` 참고)
+- `year` — YYYY-MM 형식 (연도 드롭다운 + 월 드롭다운)
+- `area` — 숫자만 입력, m² 표시, S/M/L/XL 사이즈 뱃지 자동
+- `category`, `featured`, `showOnNsm` — 삭제됨
+
+### useTypeSchema (lib/useTypeSchema.ts)
+complex / residential / office / commercial / neighborhood / mixed-use(복합시설) / residential-commercial(주상복합) / industrial / interior
+
+### stageSchema (lib/stageSchema.ts)
+- design: 0전략기획 ~ 7유지관리 (RIBA 준용, 한국 실무 힌트 포함)
+- research: 0기획 / 1진행중 / 2완료
+- software: 0요구사항분석 ~ 6운영
 
 작업 이력:
 - 다른 컴퓨터: 입력 폼 전체 구조 구축 (입력폼 → admin 폼 개선 → URL 라우팅)
 - 이 컴퓨터(zoom-test): 갤러리 줌 인터랙션 완성 + 어드민 미리보기 스트립
+- 2026-05-13: 스키마 정리(visibleOn/stageType/useType/area), Git Save/Push 기능 추가, 폼 UX 개선
 
 ## Admin 자동 배포 시스템 (2026-05-12 추가)
 
@@ -97,10 +126,7 @@ GITHUB_REPO=NSMArchi-web
 - 작업 시작 전 `git pull` 필수 (버튼 등록이 GitHub에 직접 커밋)
 - `area: "-"` 등 YAML 특수문자 따옴표 필요 (generateMdx.ts에서 자동 처리)
 
-## 다음 작업 예정
-
-- Admin 폼 필드 개선
-- 갤러리 컴포넌트 리팩토링 검토:
-  - LOW RISK: LeftMetaPanel, RightContentArea, ControlPanel 분리
-  - HIGH RISK (유지 권장): ScrollController, TextBlock
-- zoom-test → 메인 프로젝트 마이그레이션 (B안: state 기반 + URL 업데이트)
+## 작업 원칙
+- 메인 프로젝트(`C:\my-lab-site`)에 직접 작업 — 워크트리 사용 안 함
+- 코드 변경 후 `npm run dev`로 확인, push는 명시적 요청 시에만
+- **Git Push 버튼은 `public/projects/`만** add함 — 코드 변경사항은 별도로 push
