@@ -212,6 +212,7 @@ export default function ProjectForm() {
   const [loadError, setLoadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const mdx = generateMdx(data);
   const validationErrors = validateForm(data);
@@ -398,6 +399,21 @@ export default function ProjectForm() {
     } catch {
       alert(`${id}.mdx 를 불러오지 못했습니다.`);
     }
+  }
+
+  function handleImageFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).filter((f) => isImageFile(f.name));
+    if (files.length === 0) return;
+    setUploadedFiles((prev) => {
+      const existingNames = new Set(prev.map((f) => f.name));
+      return [...prev, ...files.filter((f) => !existingNames.has(f.name))];
+    });
+    setData((prev) => {
+      const existingImages = new Set(prev.images);
+      const newNames = files.map((f) => f.name).filter((n) => !existingImages.has(n));
+      return newNames.length > 0 ? { ...prev, images: [...prev.images, ...newNames] } : prev;
+    });
+    e.target.value = "";
   }
 
   function handleFileDrop(e: React.DragEvent) {
@@ -612,7 +628,7 @@ export default function ProjectForm() {
               <h2 className="text-sm font-semibold text-gray-800">기본 정보</h2>
               <button
                 type="button"
-                onClick={() => { if (confirm("폼을 초기화할까요?\n중간저장된 내용 모두 없어집니다.")) { setData(defaultFormData); setIdSlug(""); setSlugSync(false); clearDraft(); } }}
+                onClick={() => { if (confirm("폼을 초기화할까요?\n중간저장된 내용 모두 없어집니다.")) { setData(defaultFormData); setIdSlug(""); setSlugSync(false); setUploadedFiles([]); clearDraft(); } }}
                 className="px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-400"
               >
                 초기화
@@ -769,6 +785,26 @@ export default function ProjectForm() {
           <section>
             <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">이미지</h2>
             <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  + 이미지 파일 선택
+                </button>
+                {uploadedFiles.length > 0 && (
+                  <span className="text-xs text-gray-400">{uploadedFiles.length}개 로드됨</span>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageFiles}
+                />
+              </div>
               <Field label="커버 이미지" required>
                 {data.images.length > 0 ? (
                   <select value={data.coverImage} onChange={(e) => set("coverImage", e.target.value)} className={selectCls}>
