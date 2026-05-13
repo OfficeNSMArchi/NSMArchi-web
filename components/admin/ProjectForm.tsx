@@ -731,18 +731,21 @@ export default function ProjectForm() {
                 </Field>
                 <Field label="스테이지 타입">
                   <select value={data.stageType} onChange={(e) => { set("stageType", e.target.value as ProjectFormData["stageType"]); set("stage", 0) }} className={selectCls}>
+                    <option value="">— 미설정 —</option>
                     <option value="design">Design</option>
                     <option value="research">Research</option>
                     <option value="software">Software</option>
                   </select>
                 </Field>
-                <Field label="단계">
-                  <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls}>
-                    {(STAGES[data.stageType as keyof typeof STAGES] ?? STAGES.design).map((s) => (
-                      <option key={s.key} value={s.key}>{s.key} — {s.ko}{s.hint ? ` (${s.hint})` : ""}</option>
-                    ))}
-                  </select>
-                </Field>
+                {data.stageType && (
+                  <Field label="단계">
+                    <select value={data.stage} onChange={(e) => set("stage", Number(e.target.value))} className={selectCls}>
+                      {(STAGES[data.stageType as keyof typeof STAGES]).map((s) => (
+                        <option key={s.key} value={s.key}>{s.key} — {s.ko}{s.hint ? ` (${s.hint})` : ""}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
                 <Field label="연면적">
                   <input type="text" value={data.area} onChange={(e) => set("area", e.target.value)} placeholder="7,844 m²" className={inputCls} />
                 </Field>
