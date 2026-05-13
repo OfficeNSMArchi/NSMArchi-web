@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
+import { formatArea } from '@/lib/projectUtils';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
@@ -264,7 +265,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
             >
                <p className="break-words">{language === 'ko' ? project.locationKo : project.location}</p>
                <p>{project.year?.slice(0, 4)}</p>
-               <p>{project.area}</p>
+               <p>{formatArea(project.area)}</p>
                <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
             </div>
           </div>

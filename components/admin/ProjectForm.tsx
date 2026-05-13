@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ProjectFormData, defaultFormData, generateMdx } from "@/lib/generateMdx";
 import { USE_TYPES } from "@/lib/useTypeSchema";
 import { STAGE_TYPES, STAGES } from "@/lib/stageSchema";
+import { getSizeLabel, formatArea } from "@/lib/projectUtils";
 import { parseMdx } from "@/lib/parseMdx";
 import { formToProject } from "@/lib/formToProject";
 import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
@@ -747,7 +748,13 @@ export default function ProjectForm() {
                   </Field>
                 )}
                 <Field label="연면적">
-                  <input type="text" value={data.area} onChange={(e) => set("area", e.target.value)} placeholder="7,844 m²" className={inputCls} />
+                  <div className="flex items-center gap-2">
+                    <input type="number" value={data.area === "-" ? "" : data.area} onChange={(e) => set("area", e.target.value || "-")} placeholder="7844" className={inputCls} />
+                    <span className="text-sm text-gray-500 shrink-0">m²</span>
+                    {getSizeLabel(data.area) && (
+                      <span className="text-xs font-bold text-gray-400 shrink-0">{getSizeLabel(data.area)}</span>
+                    )}
+                  </div>
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">

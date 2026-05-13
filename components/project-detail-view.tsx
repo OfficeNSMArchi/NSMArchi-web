@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { Project } from '@/types/project'
 import { useRouter } from "next/navigation";
+import { formatArea } from "@/lib/projectUtils";
 
 interface ProjectDetailViewProps {
   project: Project;
@@ -174,7 +175,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                       <div className="mb-12 space-y-3 uppercase tracking-[0.2em] text-zinc-400 font-bold" style={{ fontSize: "clamp(0.3rem,2.5cqw,10pt)" }}>
                         <p>{t(project.locationKo, project.location)}</p>
                         <p>{project.year?.slice(0, 4)}</p>
-                        <p>{project.area}</p>
+                        <p>{formatArea(project.area)}</p>
                         <p>{t(project.useKo, project.use)}</p>
                       </div>
                     </>
