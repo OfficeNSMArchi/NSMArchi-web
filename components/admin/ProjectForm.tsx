@@ -236,7 +236,7 @@ export default function ProjectForm() {
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
         canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        map.set(f.name, canvas.toDataURL("image/jpeg", 0.7));
+        map.set(f.name, canvas.toDataURL("image/jpeg", 1.0));
         resolve();
       };
       img.onerror = () => { map.set(f.name, raw); resolve(); };
