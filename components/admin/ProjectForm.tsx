@@ -462,11 +462,9 @@ export default function ProjectForm() {
     setPublishError("");
 
     try {
-      const compressOpts = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
       const images = await Promise.all(
         uploadedFiles.map(async (file) => {
-          const compressed = await imageCompression(file, compressOpts);
-          const base64 = await fileToBase64(compressed);
+          const base64 = await fileToBase64(file);
           return { filename: file.name, base64 };
         })
       );
@@ -901,16 +899,17 @@ export default function ProjectForm() {
           <section>
             <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">이미지</h2>
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  + 이미지 파일 선택
-                </button>
+              <div
+                onDrop={(e) => { e.preventDefault(); const input = { target: { files: e.dataTransfer.files } } as any; handleImageFiles(input); }}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnter={(e) => e.currentTarget.classList.add("border-gray-400", "bg-gray-50")}
+                onDragLeave={(e) => e.currentTarget.classList.remove("border-gray-400", "bg-gray-50")}
+                onClick={() => imageInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
+              >
+                <p className="text-sm text-gray-400">이미지를 드래그하거나 클릭해서 선택</p>
                 {uploadedFiles.length > 0 && (
-                  <span className="text-xs text-gray-400">{uploadedFiles.length}개 로드됨</span>
+                  <p className="text-xs text-gray-400 mt-1">{uploadedFiles.length}개 로드됨</p>
                 )}
                 <input
                   ref={imageInputRef}

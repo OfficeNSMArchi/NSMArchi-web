@@ -334,7 +334,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
               }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                  <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                  <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={85} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
               </div>
             ))}
           </>
@@ -353,7 +353,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                   }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
                     <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
                       <div className="relative w-full h-full">
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                       </div>
                     </div>
                   </div>
