@@ -94,6 +94,7 @@ complex / residential / office / commercial / neighborhood / mixed-use(복합시
 - 다른 컴퓨터: 입력 폼 전체 구조 구축 (입력폼 → admin 폼 개선 → URL 라우팅)
 - 이 컴퓨터(zoom-test): 갤러리 줌 인터랙션 완성 + 어드민 미리보기 스트립
 - 2026-05-13: 스키마 정리(visibleOn/stageType/useType/area), Git Save/Push 기능 추가, 폼 UX 개선
+- 2026-05-15: ImageSequencer 통합 시퀀서 완성 + AI 번역 기능 + 어드민 보안 강화
 
 ## Admin 자동 배포 시스템 (2026-05-12 추가)
 
@@ -115,8 +116,10 @@ AUTH_GOOGLE_SECRET=
 GITHUB_TOKEN=                         # repo Contents 쓰기 권한 PAT
 GITHUB_OWNER=OfficeNSMArchi
 GITHUB_REPO=NSMArchi-web
+GROQ_API_KEY=                         # AI 번역용 (console.groq.com 무료 발급)
 ```
-> `.env.local`은 gitignore됨 — 새 기기에서 직접 생성 필요
+> `.env.local`은 gitignore됨 — 새 기기에서 직접 생성 필요  
+> Vercel 환경변수는 Sensitive라 `vercel env pull` 불가 — 노션 등에 따로 보관 필요
 
 ### Google Cloud Console
 - 리디렉션 URI: `http://localhost:3000/api/auth/callback/google`, `https://nsmarchi.com/api/auth/callback/google`
@@ -125,6 +128,32 @@ GITHUB_REPO=NSMArchi-web
 ### 주의
 - 작업 시작 전 `git pull` 필수 (버튼 등록이 GitHub에 직접 커밋)
 - `area: "-"` 등 YAML 특수문자 따옴표 필요 (generateMdx.ts에서 자동 처리)
+
+## 2026-05-15 주요 변경사항
+
+### ImageSequencer (`components/admin/ImageSequencer.tsx`) — 신규
+- 커버·설명 고정 슬롯 (비드래그) + 나머지 이미지/텍스트 블록 드래그 영역 분리
+- 커버: 오렌지 테두리, 로드 시 썸네일 표시, ✕로 삭제
+- 설명: 에메랄드 테두리, 클릭으로 편집 패널 토글
+- 첫 번째 체크 이미지 → 자동 커버 배정
+- 텍스트 블록 기본값 `"-"` (미리보기 자리 확보)
+- 설명/텍스트블록 편집기에 `✨ AI 번역` 버튼 추가
+
+### AI 번역 (`app/api/translate/route.ts`) — 신규
+- Groq LLaMA 70B 사용 (무료, 한국 지역 제한 없음)
+- 로컬: 인증 없이 사용 가능
+- 배포: Google 로그인 필요 (session 체크)
+- 미로그인 시 로그인 다이얼로그 표시, 로그인 후 draft 자동 복원
+
+### 어드민 보안 (`middleware.ts`) — 신규
+- 배포 환경(`production`)에서 `/admin` 전체 로그인 필요
+- 로컬 개발 환경은 인증 없이 자유롭게 접근
+- 미로그인 시 Google 로그인 → callbackUrl로 원래 페이지 복귀
+
+### 핵심 파일 추가
+- `components/admin/ImageSequencer.tsx` — 통합 시퀀서
+- `app/api/translate/route.ts` — AI 번역 API
+- `middleware.ts` — 어드민 접근 제어
 
 ## 작업 원칙
 - 메인 프로젝트(`C:\my-lab-site`)에 직접 작업 — 워크트리 사용 안 함
