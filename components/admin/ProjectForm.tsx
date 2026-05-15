@@ -942,23 +942,31 @@ export default function ProjectForm() {
               </Field>
               <Field label="갤러리 이미지">
                 {uploadedFiles.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {uploadedFiles.map((f) => (
-                      <label key={f.name} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={data.images.includes(f.name)}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...data.images, f.name]
-                              : data.images.filter((n) => n !== f.name);
-                            set("images", next);
-                          }}
-                          className="w-4 h-4"
-                        />
-                        {f.name}
-                      </label>
-                    ))}
+                  <div className="grid grid-cols-3 gap-2">
+                    {uploadedFiles.map((f) => {
+                      const url = previewBlobUrls.get(f.name);
+                      const checked = data.images.includes(f.name);
+                      return (
+                        <label key={f.name} className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${checked ? "border-blue-500" : "border-transparent"}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...data.images, f.name]
+                                : data.images.filter((n) => n !== f.name);
+                              set("images", next);
+                            }}
+                            className="sr-only"
+                          />
+                          {url && <img src={url} alt={f.name} className="w-full aspect-square object-cover" />}
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
+                            <p className="text-white text-[10px] truncate">{f.name}</p>
+                          </div>
+                          {checked && <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"><span className="text-white text-[8px]">✓</span></div>}
+                        </label>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="space-y-2">
