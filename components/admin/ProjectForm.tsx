@@ -175,6 +175,21 @@ export default function ProjectForm() {
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
   useEffect(() => {
+    // 로그인 후 자동 복원
+    if (sessionStorage.getItem("restore_after_login")) {
+      sessionStorage.removeItem("restore_after_login");
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        try {
+          const { data: d, idSlug: s, slugSync: ss } = JSON.parse(saved);
+          setData(d);
+          setIdSlug(s);
+          setSlugSync(ss ?? false);
+          setLoadKey((k) => k + 1);
+        } catch {}
+      }
+      return;
+    }
     const saved = localStorage.getItem(DRAFT_KEY);
     if (saved) setShowDraftBanner(true);
   }, []);
