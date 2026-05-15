@@ -11,7 +11,7 @@ import { ProjectZoomGallery } from "@/components/project-zoom-gallery";
 import JSZip from "jszip";
 import { Lock, LockOpen } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ContentBlockEditor from "./ContentBlockEditor";
+import ImageSequencer from "./ImageSequencer";
 import MdxPreview from "./MdxPreview";
 import { useSession, signIn, signOut } from "next-auth/react";
 import imageCompression from "browser-image-compression";
@@ -203,8 +203,8 @@ export default function ProjectForm() {
   }
 
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
-  const [previewHovered, setPreviewHovered] = useState(false);
   const [previewHeight, setPreviewHeight] = useState(420);
+  const [previewScale, setPreviewScale] = useState(1);
   const previewResizeRef = useRef<{ active: boolean; startY: number; startH: number }>({ active: false, startY: 0, startH: 0 });
 
   function handleResizeStart(e: React.PointerEvent) {
@@ -217,33 +217,50 @@ export default function ProjectForm() {
     setPreviewHeight(next);
   }
   function handleResizeEnd() { previewResizeRef.current.active = false; }
+  const [loadKey, setLoadKey] = useState(0);
   const [newImage, setNewImage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [previewBlobUrls, setPreviewBlobUrls] = useState<Map<string, string>>(new Map());
+  const [galleryBlobUrls, setGalleryBlobUrls] = useState<Map<string, string>>(new Map());
+  const [fullBlobUrls, setFullBlobUrls] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    const map = new Map<string, string>();
-    const revoke: string[] = [];
+    const fullMap = new Map(uploadedFiles.map((f) => [f.name, URL.createObjectURL(f)]));
+    setFullBlobUrls(fullMap);
 
-    Promise.all(uploadedFiles.map((f) => new Promise<void>((resolve) => {
-      const raw = URL.createObjectURL(f);
-      revoke.push(raw);
-      const img = new window.Image();
-      img.onload = () => {
-        const size = 120;
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(size / img.width, size / img.height, 1);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        map.set(f.name, canvas.toDataURL("image/png"));
-        resolve();
-      };
-      img.onerror = () => { map.set(f.name, raw); resolve(); };
-      img.src = raw;
-    }))).then(() => setPreviewBlobUrls(new Map(map)));
+    const thumbMap = new Map<string, string>();
+    const galleryMap = new Map<string, string>();
 
-    return () => { revoke.forEach((url) => URL.revokeObjectURL(url)); };
+    function resizeToBlob(src: string, maxPx: number, quality: number): Promise<string> {
+      return new Promise((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const scale = Math.min(maxPx / img.width, maxPx / img.height, 1);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => resolve(src);
+        img.src = src;
+      });
+    }
+
+    Promise.all(uploadedFiles.map(async (f) => {
+      const src = fullMap.get(f.name) ?? "";
+      const [thumb, gallery] = await Promise.all([
+        resizeToBlob(src, 400, 0.85),
+        resizeToBlob(src, 1920, 0.85),
+      ]);
+      thumbMap.set(f.name, thumb);
+      galleryMap.set(f.name, gallery);
+    })).then(() => {
+      setPreviewBlobUrls(new Map(thumbMap));
+      setGalleryBlobUrls(new Map(galleryMap));
+    });
+
+    return () => { fullMap.forEach((url) => URL.revokeObjectURL(url)); };
   }, [uploadedFiles]);
   const [loadMode, setLoadMode] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -331,6 +348,7 @@ export default function ProjectForm() {
         setUploadedFiles(images);
       }
       setData(parsed);
+      setLoadKey((k) => k + 1);
       setLoadMode(false);
       setPasteText("");
       setLoadError("");
@@ -456,14 +474,6 @@ export default function ProjectForm() {
         return new File([f], newName, { type: f.type });
       });
       return [...prev, ...renamed];
-    });
-    setData((prev) => {
-      const startIdx = prev.images.length + 1;
-      const newNames = files.map((f, i) => {
-        const ext = f.name.split(".").pop()?.toLowerCase() ?? "jpg";
-        return `image-${String(startIdx + i).padStart(3, "0")}.${ext}`;
-      });
-      return { ...prev, images: [...prev.images, ...newNames] };
     });
     e.target.value = "";
   }
@@ -648,15 +658,22 @@ export default function ProjectForm() {
 
       {/* ── 미리보기 스트립 ── */}
       <div
-        className="shrink-0 overflow-hidden transition-all duration-300 [&_[data-exclude-pin]]:hidden"
-        style={{ height: previewCollapsed ? 0 : previewHovered ? previewHeight : previewHeight / 2, transform: 'translateZ(0)' }}
-        onMouseEnter={() => setPreviewHovered(true)}
-        onMouseLeave={() => setPreviewHovered(false)}
+        className="shrink-0 overflow-hidden transition-all duration-300"
+        style={{ height: previewCollapsed ? 0 : previewHeight }}
       >
-        <ProjectZoomGallery
-          projects={[formToProject(data, previewBlobUrls)]}
-          defaultExpandedId={data.id || "preview"}
-        />
+        <div
+          className="[&_[data-exclude-pin]]:hidden origin-top-left"
+          style={{
+            transform: `scale(${previewScale}) translateZ(0)`,
+            width: `${100 / previewScale}%`,
+            height: `${100 / previewScale}%`,
+          }}
+        >
+          <ProjectZoomGallery
+            projects={[formToProject(data, galleryBlobUrls)]}
+            defaultExpandedId={data.id || "preview"}
+          />
+        </div>
       </div>
       {/* 드래그 핸들 + 접기/펼치기 버튼 */}
       <div
@@ -667,13 +684,26 @@ export default function ProjectForm() {
         onPointerCancel={handleResizeEnd}
       >
         <span className="text-[10px] text-gray-400 uppercase tracking-widest">미리보기</span>
-        <button
-          type="button"
-          onClick={() => setPreviewCollapsed((v) => !v)}
-          className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-0.5 rounded hover:bg-gray-300 transition-colors"
-        >
-          {previewCollapsed ? "▼ 펼치기" : "▲ 접기"}
-        </button>
+        <div className="flex items-center gap-1">
+          {/* 스케일 드롭다운 */}
+          <select
+            value={previewScale}
+            onChange={(e) => { setPreviewScale(Number(e.target.value)); setPreviewCollapsed(false); }}
+            className="text-[11px] text-gray-500 bg-transparent border-none outline-none cursor-pointer hover:text-gray-700 pr-1"
+          >
+            <option value={0.3}>30%</option>
+            <option value={0.5}>50%</option>
+            <option value={0.75}>75%</option>
+            <option value={1}>100%</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => setPreviewCollapsed((v) => !v)}
+            className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-0.5 rounded hover:bg-gray-300 transition-colors"
+          >
+            {previewCollapsed ? "▼ 펼치기" : "▲ 접기"}
+          </button>
+        </div>
       </div>
 
       {/* ── 폼 + MDX ── */}
@@ -922,10 +952,11 @@ export default function ProjectForm() {
             </div>
           </section>
 
-          {/* 3. 이미지 */}
+          {/* 3. 이미지 + 콘텐츠 시퀀서 */}
           <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">이미지</h2>
+            <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">이미지 &amp; 콘텐츠</h2>
             <div className="space-y-4">
+              {/* 드롭존 */}
               <div
                 onDrop={(e) => { e.preventDefault(); const input = { target: { files: e.dataTransfer.files } } as any; handleImageFiles(input); }}
                 onDragOver={(e) => e.preventDefault()}
@@ -938,104 +969,26 @@ export default function ProjectForm() {
                 {uploadedFiles.length > 0 && (
                   <p className="text-xs text-gray-400 mt-1">{uploadedFiles.length}개 로드됨</p>
                 )}
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageFiles}
-                />
+                <input ref={imageInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleImageFiles} />
               </div>
-              <Field label="커버 이미지" required>
-                {data.images.length > 0 ? (
-                  <select value={data.coverImage} onChange={(e) => set("coverImage", e.target.value)} className={selectCls}>
-                    <option value="">— 선택 —</option>
-                    {data.images.map((img) => (
-                      <option key={img} value={img}>{img}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input type="text" value={data.coverImage} onChange={(e) => set("coverImage", e.target.value)} placeholder="cover.png" className={inputCls} />
-                )}
-              </Field>
-              <Field label="갤러리 이미지">
-                {uploadedFiles.length > 0 ? (
-                  <div className="grid grid-cols-6 gap-1.5">
-                    {uploadedFiles.map((f) => {
-                      const url = previewBlobUrls.get(f.name);
-                      const checked = data.images.includes(f.name);
-                      return (
-                        <label key={f.name} className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-colors ${checked ? "border-blue-500" : "border-transparent"}`}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              const next = e.target.checked
-                                ? [...data.images, f.name]
-                                : data.images.filter((n) => n !== f.name);
-                              set("images", next);
-                            }}
-                            className="sr-only"
-                          />
-                          {url && <img src={url} alt={f.name} className="w-full aspect-square object-cover" />}
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
-                            <p className="text-white text-[10px] truncate">{f.name}</p>
-                          </div>
-                          {checked && <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center"><span className="text-white text-[8px]">✓</span></div>}
-                        </label>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {data.images.map((img, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">{img}</span>
-                        <button type="button" onClick={() => removeImage(i)} className="text-red-500 hover:text-red-700 text-sm px-2">×</button>
-                      </div>
-                    ))}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newImage}
-                        onChange={(e) => setNewImage(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
-                        placeholder="F1.jpg"
-                        className={`${inputCls} flex-1`}
-                      />
-                      <button type="button" onClick={addImage} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">추가</button>
-                    </div>
-                  </div>
-                )}
-              </Field>
+              {/* 시퀀서 */}
+              <ImageSequencer
+                uploadedFiles={uploadedFiles}
+                blobUrls={previewBlobUrls}
+                initialCoverImage={data.coverImage}
+                initialContent={data.content}
+                description={data.description}
+                descriptionKo={data.descriptionKo}
+                loadKey={loadKey}
+                onCoverChange={(name) => set("coverImage", name)}
+                onContentChange={(blocks) => set("content", blocks)}
+                onDescriptionChange={(ko, en) => setData((prev) => ({ ...prev, descriptionKo: ko, description: en }))}
+                onRemoveFile={(name) => setUploadedFiles((prev) => prev.filter((f) => f.name !== name))}
+              />
             </div>
           </section>
 
-          {/* 4. 설명 */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">설명</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="설명 (한국어)" required>
-                <textarea value={data.descriptionKo} onChange={(e) => set("descriptionKo", e.target.value)} placeholder="프로젝트 소개..." rows={4} className={`${inputCls} resize-y`} />
-              </Field>
-              <Field label="설명 (영어)" required>
-                <textarea value={data.description} onChange={(e) => set("description", e.target.value)} placeholder="Project overview..." rows={4} className={`${inputCls} resize-y`} />
-              </Field>
-            </div>
-          </section>
-
-          {/* 5. Content Blocks */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">콘텐츠 블록</h2>
-            <ContentBlockEditor
-              blocks={data.content}
-              onChange={(blocks) => set("content", blocks)}
-              images={data.images}
-            />
-          </section>
-
-          {/* 6. 추가 필드 */}
+          {/* 5. 추가 필드 */}
           <section>
             <h2 className="text-sm font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">추가 필드</h2>
             <div className="space-y-2">

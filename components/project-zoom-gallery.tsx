@@ -103,6 +103,9 @@ function TextBlock({ block, language, isExpanded }: {
     ? { columnCount: modules >= 2 ? 2 : 1, columnGap: '2rem', columnFill: 'auto', height: '100%' }
     : { columnCount: 1, columnGap: '2rem' };
 
+  const hasContent = (block.title?.ko || block.title?.en || block.body?.ko || block.body?.en);
+  if (!hasContent) return null;
+
   return (
     <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
       isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -309,57 +312,53 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           )}
         </motion.div>
 
-        {/* Right Content */}
-        {(!project.content || project.content.length === 0) ? (
-          <>
-            {/* Description in the right margin space (15% md:25%) */}
-            <div className={`shrink-0 relative h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-            }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-              <div
-                className="absolute inset-0 flex flex-col justify-center px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
-                style={{ containerType: 'inline-size' }}
-              >
-                <p
-                  className="text-gray-600 leading-relaxed md:leading-loose whitespace-pre-wrap font-light break-words w-full"
-                  style={{ fontSize: FONT_DESC }}
-                >
-                  {language === 'ko' ? project.descriptionKo : (project.description || project.descriptionKo)}
-                </p>
-              </div>
-            </div>
-            
-            {/* Render additional images if any */}
-            {project.images?.filter(img => img !== project.image).map((img, i) => (
-              <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                  <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={85} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
-              </div>
-            ))}
-          </>
-        ) : (
-          <>
-            {/* When content exists, skip description and simple images, just render content blocks */}
-            {project.content
-              .filter(block => !(block.type === 'image' && block.src === project.image))
-              .map((block, i) => {
-                if (block.type === 'text') {
-                  return <TextBlock key={`content-${i}`} block={block} language={language} isExpanded={isExpanded} />;
-                }
-                return (
-                  <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                    isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                    <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
-                      <div className="relative w-full h-full">
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
-                      </div>
+        {/* Right Content: description always first, then content blocks (or fallback images) */}
+
+        {/* Description — always shown */}
+        <div className={`shrink-0 relative h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+          <div
+            className="absolute inset-0 flex flex-col justify-center px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
+            style={{ containerType: 'inline-size' }}
+          >
+            <p
+              className="text-gray-600 leading-relaxed md:leading-loose whitespace-pre-wrap font-light break-words w-full"
+              style={{ fontSize: FONT_DESC }}
+            >
+              {language === 'ko' ? project.descriptionKo : (project.description || project.descriptionKo)}
+            </p>
+          </div>
+        </div>
+
+        {/* Content blocks if any, otherwise fallback images array */}
+        {(project.content && project.content.length > 0) ? (
+          project.content
+            .filter(block => !(block.type === 'image' && block.src === project.image))
+            .map((block, i) => {
+              if (block.type === 'text') {
+                return <TextBlock key={`content-${i}`} block={block} language={language} isExpanded={isExpanded} />;
+              }
+              return (
+                <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                  <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
+                    <div className="relative w-full h-full">
+                      <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                     </div>
                   </div>
-                );
-              })}
-          </>
+                </div>
+              );
+            })
+        ) : (
+          project.images?.filter(img => img !== project.image).map((img, i) => (
+            <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+              <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={85} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+            </div>
+          ))
         )}
         
         {/* Spacer at the end for comfortable scrolling */}
