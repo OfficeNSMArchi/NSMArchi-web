@@ -449,13 +449,15 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        window.history.pushState(null, '', window.location.pathname);
-      } else {
+      const isOpening = !prev.has(id);
+      if (isOpening) {
         next.add(id);
-        window.history.pushState(null, '', `/projects/${id}`);
+      } else {
+        next.delete(id);
       }
+      setTimeout(() => {
+        window.history.pushState(null, '', isOpening ? `/projects/${id}` : window.location.pathname);
+      }, 0);
       return next;
     });
   };
