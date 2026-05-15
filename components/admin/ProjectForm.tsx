@@ -430,13 +430,21 @@ export default function ProjectForm() {
     const files = Array.from(e.target.files ?? []).filter((f) => isImageFile(f.name));
     if (files.length === 0) return;
     setUploadedFiles((prev) => {
-      const existingNames = new Set(prev.map((f) => f.name));
-      return [...prev, ...files.filter((f) => !existingNames.has(f.name))];
+      const startIdx = prev.length + 1;
+      const renamed = files.map((f, i) => {
+        const ext = f.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const newName = `image-${String(startIdx + i).padStart(3, "0")}.${ext}`;
+        return new File([f], newName, { type: f.type });
+      });
+      return [...prev, ...renamed];
     });
     setData((prev) => {
-      const existingImages = new Set(prev.images);
-      const newNames = files.map((f) => f.name).filter((n) => !existingImages.has(n));
-      return newNames.length > 0 ? { ...prev, images: [...prev.images, ...newNames] } : prev;
+      const startIdx = prev.images.length + 1;
+      const newNames = files.map((f, i) => {
+        const ext = f.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        return `image-${String(startIdx + i).padStart(3, "0")}.${ext}`;
+      });
+      return { ...prev, images: [...prev.images, ...newNames] };
     });
     e.target.value = "";
   }
