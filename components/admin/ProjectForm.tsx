@@ -222,9 +222,28 @@ export default function ProjectForm() {
   const [previewBlobUrls, setPreviewBlobUrls] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    const map = new Map(uploadedFiles.map((f) => [f.name, URL.createObjectURL(f)]));
-    setPreviewBlobUrls(map);
-    return () => { map.forEach((url) => URL.revokeObjectURL(url)); };
+    const map = new Map<string, string>();
+    const revoke: string[] = [];
+
+    Promise.all(uploadedFiles.map((f) => new Promise<void>((resolve) => {
+      const raw = URL.createObjectURL(f);
+      revoke.push(raw);
+      const img = new window.Image();
+      img.onload = () => {
+        const size = 120;
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(size / img.width, size / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        map.set(f.name, canvas.toDataURL("image/jpeg", 0.7));
+        resolve();
+      };
+      img.onerror = () => { map.set(f.name, raw); resolve(); };
+      img.src = raw;
+    }))).then(() => setPreviewBlobUrls(new Map(map)));
+
+    return () => { revoke.forEach((url) => URL.revokeObjectURL(url)); };
   }, [uploadedFiles]);
   const [loadMode, setLoadMode] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -942,7 +961,7 @@ export default function ProjectForm() {
               </Field>
               <Field label="갤러리 이미지">
                 {uploadedFiles.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-6 gap-1.5">
                     {uploadedFiles.map((f) => {
                       const url = previewBlobUrls.get(f.name);
                       const checked = data.images.includes(f.name);
