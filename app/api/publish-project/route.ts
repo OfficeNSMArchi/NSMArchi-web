@@ -4,17 +4,6 @@ import { Octokit } from "@octokit/rest";
 
 const ALLOWED_EMAIL = "office@nsmarchi.com";
 
-interface ImageFile {
-  filename: string;
-  base64: string;
-}
-
-interface PublishPayload {
-  projectId: string;
-  mdxContent: string;
-  images: ImageFile[];
-}
-
 export async function POST(req: NextRequest) {
   const session = await auth();
 
@@ -26,11 +15,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const payload: PublishPayload = await req.json();
-  const { projectId, mdxContent, images } = payload;
+  const formData = await req.formData();
+  const projectId = formData.get("projectId") as string;
+  const mdxContent = formData.get("mdxContent") as string;
 
   if (!projectId || !mdxContent) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const images: { filename: string; base64: string }[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("image:") && value instanceof File) {
+      const filename = key.slice("image:".length);
+      const base64 = Buffer.from(await value.arrayBuffer()).toString("base64");
+      images.push({ filename, base64 });
+    }
   }
 
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });

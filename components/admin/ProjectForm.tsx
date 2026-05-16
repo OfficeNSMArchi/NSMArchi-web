@@ -91,12 +91,19 @@ function isImageFile(name: string) {
 
 type PublishStatus = "idle" | "publishing" | "success" | "error";
 
-async function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+function resizeToBlob(src: string, maxPx: number, quality: number): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const scale = Math.min(maxPx / img.width, maxPx / img.height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
   });
 }
 
@@ -245,22 +252,6 @@ export default function ProjectForm() {
 
     const thumbMap = new Map<string, string>();
     const galleryMap = new Map<string, string>();
-
-    function resizeToBlob(src: string, maxPx: number, quality: number): Promise<string> {
-      return new Promise((resolve) => {
-        const img = new window.Image();
-        img.onload = () => {
-          const scale = Math.min(maxPx / img.width, maxPx / img.height, 1);
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/jpeg", quality));
-        };
-        img.onerror = () => resolve(src);
-        img.src = src;
-      });
-    }
 
     Promise.all(uploadedFiles.map(async (f) => {
       const src = fullMap.get(f.name) ?? "";
@@ -514,22 +505,27 @@ export default function ProjectForm() {
     setPublishError("");
 
     try {
-      const images = await Promise.all(
-        uploadedFiles.map(async (file) => {
-          const base64 = await fileToBase64(file);
-          return { filename: file.name, base64 };
-        })
-      );
+      const formData = new FormData();
+      formData.append("projectId", data.id);
+      formData.append("mdxContent", generateMdx(data));
+      for (const file of uploadedFiles) {
+        const src = URL.createObjectURL(file);
+        const dataUrl = await resizeToBlob(src, 2560, 0.92);
+        URL.revokeObjectURL(src);
+        const blob = await (await fetch(dataUrl)).blob();
+        formData.append(`image:${file.name}`, blob, file.name);
+      }
 
       const res = await fetch("/api/publish-project", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: data.id, mdxContent: generateMdx(data), images }),
+        body: formData,
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "업로드 실패");
+        const text = await res.text();
+        let message = "업로드 실패";
+        try { message = JSON.parse(text).error || message; } catch {}
+        throw new Error(message);
       }
 
       setPublishStatus("success");
