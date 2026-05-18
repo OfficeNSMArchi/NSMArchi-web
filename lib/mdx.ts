@@ -63,6 +63,8 @@ export function getAllProjects(): Project[] {
       content: (data.content ?? []).map((block: any) =>
         block.type === 'image'
           ? { type: 'image' as const, src: resolveImgPath(id, block.src), alt: block.alt }
+          : block.type === 'map'
+          ? { type: 'map' as const, address: block.address, lat: block.lat, lng: block.lng, zoom: block.zoom, mapType: block.mapType }
           : {
               type: 'text' as const,
               title: { ko: block.titleKo ?? '', en: block.titleEn ?? '' },
