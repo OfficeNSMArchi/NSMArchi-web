@@ -68,9 +68,9 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
       mapTypeId: mapType,
       styles: mapType === "roadmap" ? GRAYSCALE_STYLE : mapType === "hybrid" ? HYBRID_STYLE : [],
       disableDefaultUI: true,
-      zoomControl: true,
+      zoomControl: false,
       scaleControl: false,
-      gestureHandling: "cooperative",
+      gestureHandling: "none",
       keyboardShortcuts: false,
     });
     mapInstanceRef.current = map;
@@ -143,6 +143,23 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
     };
   }, [ready, lat, lng, zoom, mapType]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const outerRef = useRef<HTMLDivElement>(null);
+
+  // native wheel listener (passive:false) — React onWheel은 passive라 preventDefault 불가
+  useEffect(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (!mapInstanceRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const currentZoom = mapInstanceRef.current.getZoom() ?? 15;
+      mapInstanceRef.current.setZoom(currentZoom + (e.deltaY < 0 ? 1 : -1));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
   // height 숫자 → 명시적 높이 박스 / 생략 → 부모를 inset-0으로 채움
   const outerStyle: React.CSSProperties = height != null
     ? { position: "relative", width: "100%", height, overflow: "hidden" }
@@ -155,7 +172,11 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
         strategy="afterInteractive"
         onLoad={() => setReady(true)}
       />
-      <div style={outerStyle}>
+      <div
+        ref={outerRef}
+        style={outerStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div ref={mapRef} style={{ position: "absolute", inset: 0, filter: mapType === "roadmap" ? "grayscale(1)" : "grayscale(1) brightness(1.1)" }} />
         {scaleBar && (
           <div style={{ position: "absolute", right: 55, bottom: 50, zIndex: 10, pointerEvents: "none" }}>

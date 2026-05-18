@@ -10,11 +10,6 @@
   opacity: 0.25;
 }
 
-/* 줌 버튼 70% */
-.gm-bundled-control {
-  transform: scale(0.7);
-  transform-origin: right bottom;
-}
 
 /* 스케일 컨트롤 */
 .gm-style-sc {
