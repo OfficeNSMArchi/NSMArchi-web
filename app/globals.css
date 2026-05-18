@@ -2,6 +2,33 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant landscape (@media (orientation: landscape));
 
+/* 위성/하이브리드 지도 타일만 흑백 — 핀(HTML 레이어)은 제외 */
+.map-gray-tiles canvas { filter: grayscale(1); }
+
+/* 구글맵 약관·지도데이터 텍스트 숨김, 스케일 바는 유지 */
+.gm-style-cc {
+  opacity: 0.25;
+}
+
+/* 줌 버튼 70% */
+.gm-bundled-control {
+  transform: scale(0.7);
+  transform-origin: right bottom;
+}
+
+/* 스케일 컨트롤 */
+.gm-style-sc {
+  margin-bottom: 24px !important;
+  margin-left: 8px !important;
+  background: rgba(255,255,255,0.85) !important;
+  border-radius: 2px;
+  padding: 1px 4px !important;
+  font-size: 11px !important;
+  color: #333 !important;
+  transform: scale(5);
+  transform-origin: left bottom;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -1,6 +1,7 @@
 "use client";
 
 import { ContentBlock } from "@/lib/generateMdx";
+import { useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -35,6 +36,27 @@ interface BlockItemProps {
 
 function BlockItem({ id, index, block, total, images, onRemove, onUpdate }: BlockItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+
+  async function searchAddress() {
+    if (!block.address) return;
+    setIsSearching(true);
+    setSearchError("");
+    try {
+      const res = await fetch(`/api/geocode?address=${encodeURIComponent(block.address)}`);
+      const data = await res.json();
+      if (data.lat != null) {
+        onUpdate({ lat: data.lat, lng: data.lng, address: data.formattedAddress });
+      } else {
+        setSearchError("위치를 찾을 수 없습니다.");
+      }
+    } catch {
+      setSearchError("검색 중 오류가 발생했습니다.");
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -56,7 +78,7 @@ function BlockItem({ id, index, block, total, images, onRemove, onUpdate }: Bloc
             ⠿
           </button>
           <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            {block.type === "image" ? "🖼 이미지 블록" : "📝 텍스트 블록"} #{index + 1}
+            {block.type === "image" ? "🖼 이미지 블록" : block.type === "map" ? "🗺 맵 블록" : "📝 텍스트 블록"} #{index + 1}
           </span>
         </div>
         <button
@@ -68,7 +90,73 @@ function BlockItem({ id, index, block, total, images, onRemove, onUpdate }: Bloc
         </button>
       </div>
 
-      {block.type === "image" ? (
+      {block.type === "map" ? (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={block.address || ""}
+              onChange={(e) => onUpdate({ address: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); searchAddress(); } }}
+              placeholder="주소 또는 장소명 (예: 서울시 종로구 사직로 161)"
+              className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+            />
+            <button
+              type="button"
+              onClick={searchAddress}
+              disabled={isSearching || !block.address}
+              className="px-3 py-1 text-sm border border-blue-300 text-blue-600 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isSearching ? "검색 중..." : "위치 검색"}
+            </button>
+          </div>
+          {searchError && <p className="text-xs text-red-500">{searchError}</p>}
+          {block.lat != null && block.lng != null && (
+            <>
+              <iframe
+                src={`https://www.google.com/maps/embed/v1/view?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&center=${block.lat},${block.lng}&zoom=${block.zoom ?? 15}&maptype=roadmap`}
+                className="w-full rounded border border-gray-200"
+                style={{ height: 260 }}
+                allowFullScreen
+              />
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">위도 (lat)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={block.lat}
+                    onChange={(e) => onUpdate({ lat: parseFloat(e.target.value) })}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">경도 (lng)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={block.lng}
+                    onChange={(e) => onUpdate({ lng: parseFloat(e.target.value) })}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">줌 레벨</label>
+                  <select
+                    value={block.zoom ?? 15}
+                    onChange={(e) => onUpdate({ zoom: parseInt(e.target.value) })}
+                    className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white"
+                  >
+                    {[12, 13, 14, 15, 16, 17, 18].map((z) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : block.type === "image" ? (
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-gray-600 mb-1">파일명 / URL</label>
@@ -169,10 +257,12 @@ export default function ContentBlockEditor({ blocks, onChange, images = [] }: Pr
     onChange(arrayMove(blocks, oldIndex, newIndex));
   }
 
-  function add(type: "image" | "text") {
+  function add(type: "image" | "text" | "map") {
     const block: ContentBlock =
       type === "image"
         ? { type: "image", src: "", alt: "" }
+        : type === "map"
+        ? { type: "map", address: "", zoom: 15 }
         : { type: "text", titleKo: "", titleEn: "", bodyKo: "", bodyEn: "" };
     onChange([...blocks, block]);
   }
@@ -218,6 +308,13 @@ export default function ContentBlockEditor({ blocks, onChange, images = [] }: Pr
           className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
         >
           + 텍스트 블록
+        </button>
+        <button
+          type="button"
+          onClick={() => add("map")}
+          className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          + 맵 블록
         </button>
       </div>
     </div>

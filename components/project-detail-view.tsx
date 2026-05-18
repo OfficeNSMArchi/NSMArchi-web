@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/language-context"
 import { Project } from '@/types/project'
 import { useRouter } from "next/navigation";
 import { formatArea } from "@/lib/projectUtils";
+import GoogleMap from "@/components/GoogleMap";
 
 interface ProjectDetailViewProps {
   project: Project;
@@ -189,6 +190,16 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 </div>
               </div>
             )
+          }
+          if (slide.type === "map" && slide.lat != null && slide.lng != null) {
+            return (
+              <div key={`map-${index}`} className="flex-none h-full w-[clamp(320px,36vw,620px)] max-h-full relative border-r border-zinc-100 dark:border-zinc-800 overflow-hidden">
+                <GoogleMap lat={slide.lat} lng={slide.lng} zoom={slide.zoom ?? 15} mapType={slide.mapType} />
+                {slide.address && (
+                  <p className="absolute bottom-0 left-0 right-0 text-[9pt] text-zinc-400 py-2 px-4 text-center tracking-wide bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm">{slide.address}</p>
+                )}
+              </div>
+            );
           }
           return (
             <div key={`img-${index}`} className="flex-none h-full max-h-full flex items-center justify-center border-r border-zinc-100 dark:border-zinc-800 overflow-hidden">

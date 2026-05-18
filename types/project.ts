@@ -23,6 +23,7 @@ export interface Project {
     content?: Array<
       | { type: "image"; src: string; alt?: string; }
       | { type: "text"; title?: { ko: string; en: string }; body: { ko: string; en: string }; }
+      | { type: "map"; address?: string; lat?: number; lng?: number; zoom?: number; mapType?: "roadmap" | "satellite" | "hybrid"; }
     >;
     companies: Array<"ndb" | "snp" | "metalogic">;
     metalogicCategory?: "practice" | "research" | "solution" | "essay" | "education" | "roots";

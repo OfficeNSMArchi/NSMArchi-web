@@ -9,6 +9,7 @@ import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
 import { formatArea, getSizeLabel } from '@/lib/projectUtils';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
+import GoogleMap from '@/components/GoogleMap';
 
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -339,17 +340,29 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               if (block.type === 'text') {
                 return <TextBlock key={`content-${i}`} block={block} language={language} isExpanded={isExpanded} />;
               }
-              return (
-                <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                  <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
-                    <div className="relative w-full h-full">
-                      <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+              if (block.type === 'map' && block.lat != null && block.lng != null) {
+                return (
+                  <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative overflow-hidden transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                    <GoogleMap lat={block.lat} lng={block.lng} zoom={block.zoom ?? 15} mapType={block.mapType} />
+                  </div>
+                );
+              }
+              if (block.type === 'image') {
+                return (
+                  <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                    <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
+                      <div className="relative w-full h-full">
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
+                );
+              }
+              return null;
             })
         ) : (
           project.images?.filter(img => img !== project.image).map((img, i) => (

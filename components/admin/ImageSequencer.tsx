@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
+import GoogleMap from "@/components/GoogleMap";
 import { ContentBlock } from "@/lib/generateMdx";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -13,7 +14,8 @@ import { CSS } from "@dnd-kit/utilities";
 
 type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean };
 type SeqText  = { id: string; kind: "text"; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
-type SeqItem  = SeqImage | SeqText;
+type SeqMap   = { id: string; kind: "map"; address: string; lat?: number; lng?: number; zoom: number; mapType?: "roadmap" | "satellite" | "hybrid"; expanded: boolean };
+type SeqItem  = SeqImage | SeqText | SeqMap;
 
 export interface ImageSequencerProps {
   uploadedFiles: File[];
@@ -41,6 +43,8 @@ function deriveContent(seq: SeqItem[]): ContentBlock[] {
       content.push({ type: "image", src: item.filename, alt: "" });
     } else if (item.kind === "text") {
       content.push({ type: "text", titleKo: item.titleKo, titleEn: item.titleEn, bodyKo: item.bodyKo, bodyEn: item.bodyEn });
+    } else if (item.kind === "map") {
+      content.push({ type: "map", address: item.address, lat: item.lat, lng: item.lng, zoom: item.zoom, mapType: item.mapType });
     }
   }
   return content;
@@ -70,6 +74,13 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
         bodyKo: block.bodyKo ?? "", bodyEn: block.bodyEn ?? "",
         expanded: false,
       });
+    } else if (block.type === "map") {
+      seq.push({
+        id: uid(), kind: "map",
+        address: block.address ?? "", lat: block.lat, lng: block.lng, zoom: block.zoom ?? 15,
+        mapType: block.mapType,
+        expanded: false,
+      });
     }
   }
 
@@ -88,6 +99,7 @@ function getBadges(seq: SeqItem[]): Map<string, string> {
   const map = new Map<string, string>();
   let imgN = 0;
   let txtN = 0;
+  let mapN = 0;
   for (const item of seq) {
     if (item.kind === "image" && item.checked) {
       imgN++;
@@ -95,6 +107,9 @@ function getBadges(seq: SeqItem[]): Map<string, string> {
     } else if (item.kind === "text") {
       txtN++;
       map.set(item.id, `텍스트${txtN}`);
+    } else if (item.kind === "map") {
+      mapN++;
+      map.set(item.id, `지도${mapN}`);
     }
   }
   return map;
@@ -198,6 +213,36 @@ function SortableTextItem({ item, badge, onToggle, onRemove }: {
         <span className="text-xl">📝</span>
         <span className="text-[10px] text-blue-600 font-medium">{badge}</span>
         <span className="text-[9px] text-blue-400">{item.expanded ? "▲" : "▼"}</span>
+      </div>
+      <button type="button"
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto"
+      >✕</button>
+    </div>
+  );
+}
+
+// ── Sortable Map Item ─────────────────────────────────────────────
+
+function SortableMapItem({ item, badge, onToggle, onRemove }: {
+  item: SeqMap; badge: string;
+  onToggle: () => void; onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      className="relative w-24 h-24 rounded-lg border-2 border-green-400 bg-green-50 flex-shrink-0 select-none cursor-grab active:cursor-grabbing touch-none"
+      onClick={onToggle}
+    >
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 pointer-events-none">
+        <span className="text-xl">🗺</span>
+        <span className="text-[10px] text-green-600 font-medium">{badge}</span>
+        <span className="text-[9px] text-green-400">{item.expanded ? "▲" : "▼"}</span>
       </div>
       <button type="button"
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -326,10 +371,55 @@ export default function ImageSequencer({
 
   function addTextBlock() {
     setSequence((s) => [
-      ...s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i),
+      ...s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i.kind === "map" ? { ...i, expanded: false } : i),
       { id: uid(), kind: "text", titleKo: "-", titleEn: "-", bodyKo: "-", bodyEn: "-", expanded: true },
     ]);
     setDescExpanded(false);
+  }
+
+  function addMapBlock() {
+    setSequence((s) => [
+      ...s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i.kind === "map" ? { ...i, expanded: false } : i),
+      { id: uid(), kind: "map", address: "", zoom: 15, expanded: true },
+    ]);
+    setDescExpanded(false);
+  }
+
+  function toggleExpandMap(id: string) {
+    setSequence((s) => s.map((i) => {
+      if (i.kind === "map") return { ...i, expanded: i.id === id ? !i.expanded : false };
+      if (i.kind === "text") return { ...i, expanded: false };
+      return i;
+    }));
+    setDescExpanded(false);
+  }
+
+  function updateMap(id: string, patch: Partial<SeqMap>) {
+    setSequence((s) => s.map((i) => i.id === id && i.kind === "map" ? { ...i, ...patch } : i));
+  }
+
+  // ── Map geocoding ──────────────────────────────────────────────
+
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeError, setGeocodeError] = useState("");
+
+  async function searchMapAddress(id: string, address: string) {
+    if (!address.trim()) return;
+    setGeocoding(true);
+    setGeocodeError("");
+    try {
+      const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if (data.lat != null) {
+        updateMap(id, { lat: data.lat, lng: data.lng, address: data.formattedAddress });
+      } else {
+        setGeocodeError("위치를 찾을 수 없습니다.");
+      }
+    } catch {
+      setGeocodeError("검색 중 오류가 발생했습니다.");
+    } finally {
+      setGeocoding(false);
+    }
   }
 
   // ── Translation ────────────────────────────────────────────────
@@ -416,6 +506,15 @@ export default function ImageSequencer({
                       key={item.id} item={item} badge={badge}
                       blobUrl={blobUrls.get(item.filename)}
                       onCheck={() => toggleCheck(item.id)}
+                      onRemove={() => removeItem(item.id)}
+                    />
+                  );
+                }
+                if (item.kind === "map") {
+                  return (
+                    <SortableMapItem
+                      key={item.id} item={item} badge={badge}
+                      onToggle={() => toggleExpandMap(item.id)}
                       onRemove={() => removeItem(item.id)}
                     />
                   );
@@ -509,13 +608,100 @@ export default function ImageSequencer({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={addTextBlock}
-        className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
-      >
-        📝 텍스트 블록 추가
-      </button>
+      {/* Inline editor — map block */}
+      {(() => {
+        const expandedMap = sequence.find((i) => i.kind === "map" && i.expanded) as SeqMap | undefined;
+        if (!expandedMap) return null;
+        const mapBadge = badges.get(expandedMap.id) ?? "지도";
+        return (
+          <div className="border border-green-200 rounded-lg p-4 bg-green-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-green-600">🗺 {mapBadge} 편집</span>
+              <button type="button" onClick={() => toggleExpandMap(expandedMap.id)} className="text-xs text-gray-400 hover:text-gray-600">▲ 접기</button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={expandedMap.address}
+                onChange={(e) => updateMap(expandedMap.id, { address: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); searchMapAddress(expandedMap.id, expandedMap.address); } }}
+                placeholder="주소 또는 장소명 (예: 서울시 종로구 사직로 161)"
+                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => searchMapAddress(expandedMap.id, expandedMap.address)}
+                disabled={geocoding || !expandedMap.address.trim()}
+                className="px-3 py-1 text-sm border border-green-400 text-green-700 rounded hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {geocoding ? "검색 중..." : "위치 검색"}
+              </button>
+            </div>
+            {geocodeError && <p className="text-xs text-red-500">{geocodeError}</p>}
+            {/* 좌표 없으면 서울 중심으로 빈 지도 표시 — 클릭으로 핀 찍기 */}
+            <GoogleMap
+              lat={expandedMap.lat ?? 37.5665} lng={expandedMap.lng ?? 126.978}
+              zoom={expandedMap.lat != null ? expandedMap.zoom : 11}
+              mapType={expandedMap.mapType}
+              height={260}
+              onPinDrop={(lat, lng, address) => updateMap(expandedMap.id, { lat, lng, address: address || expandedMap.address })}
+            />
+            {expandedMap.lat != null && expandedMap.lng != null && (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">위도 (lat)</label>
+                    <input type="number" step="any" value={expandedMap.lat}
+                      onChange={(e) => updateMap(expandedMap.id, { lat: parseFloat(e.target.value) })}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">경도 (lng)</label>
+                    <input type="number" step="any" value={expandedMap.lng}
+                      onChange={(e) => updateMap(expandedMap.id, { lng: parseFloat(e.target.value) })}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">줌 레벨</label>
+                    <select value={expandedMap.zoom}
+                      onChange={(e) => updateMap(expandedMap.id, { zoom: parseInt(e.target.value) })}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white">
+                      {[12, 13, 14, 15, 16, 17, 18].map((z) => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">지도 타입</label>
+                    <select value={expandedMap.mapType ?? "roadmap"}
+                      onChange={(e) => updateMap(expandedMap.id, { mapType: e.target.value as SeqMap["mapType"] })}
+                      className="w-full border border-gray-300 rounded px-2 py-1 text-xs bg-white">
+                      <option value="roadmap">일반</option>
+                      <option value="satellite">위성</option>
+                      <option value="hybrid">위성+라벨</option>
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={addTextBlock}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+        >
+          📝 텍스트 블록 추가
+        </button>
+        <button
+          type="button"
+          onClick={addMapBlock}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+        >
+          🗺 맵 블록 추가
+        </button>
+      </div>
 
       {/* Login dialog */}
       {showLoginDialog && (

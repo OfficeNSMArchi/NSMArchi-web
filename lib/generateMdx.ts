@@ -1,5 +1,5 @@
 export interface ContentBlock {
-  type: "image" | "text";
+  type: "image" | "text" | "map";
   // image
   src?: string;
   alt?: string;
@@ -8,6 +8,12 @@ export interface ContentBlock {
   titleEn?: string;
   bodyKo?: string;
   bodyEn?: string;
+  // map
+  address?: string;
+  lat?: number;
+  lng?: number;
+  zoom?: number;
+  mapType?: "roadmap" | "satellite" | "hybrid";
 }
 
 export interface ProjectFormData {
@@ -145,6 +151,13 @@ export function generateMdx(data: ProjectFormData): string {
         lines.push(`  - type: image`);
         lines.push(`    src: ${block.src || '""'}`);
         if (block.alt) lines.push(`    alt: ${escapeYamlString(block.alt)}`);
+      } else if (block.type === "map") {
+        lines.push(`  - type: map`);
+        if (block.address) lines.push(`    address: ${escapeYamlString(block.address)}`);
+        if (block.lat != null) lines.push(`    lat: ${block.lat}`);
+        if (block.lng != null) lines.push(`    lng: ${block.lng}`);
+        if (block.zoom != null) lines.push(`    zoom: ${block.zoom}`);
+        if (block.mapType && block.mapType !== "roadmap") lines.push(`    mapType: ${block.mapType}`);
       } else {
         lines.push(`  - type: text`);
         lines.push(`    titleKo: ${escapeYamlString(block.titleKo || "-")}`);

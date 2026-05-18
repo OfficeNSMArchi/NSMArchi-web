@@ -43,6 +43,9 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
       if (block.type === "image") {
         return { type: "image" as const, src: resolve(block.src ?? ""), alt: block.alt };
       }
+      if (block.type === "map") {
+        return { type: "map" as const, address: block.address, lat: block.lat, lng: block.lng, zoom: block.zoom, mapType: block.mapType };
+      }
       return {
         type: "text" as const,
         title: { ko: block.titleKo ?? "", en: block.titleEn ?? "" },
