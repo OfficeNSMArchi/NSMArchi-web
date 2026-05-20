@@ -149,10 +149,15 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
   useEffect(() => {
     const el = outerRef.current;
     if (!el) return;
+    let lastZoomAt = 0;
+    const THROTTLE_MS = 300; // 줌 변경 최소 간격 (ms) — 높일수록 둔감
     const handler = (e: WheelEvent) => {
       if (!mapInstanceRef.current) return;
       e.preventDefault();
       e.stopPropagation();
+      const now = Date.now();
+      if (now - lastZoomAt < THROTTLE_MS) return;
+      lastZoomAt = now;
       const currentZoom = mapInstanceRef.current.getZoom() ?? 15;
       mapInstanceRef.current.setZoom(currentZoom + (e.deltaY < 0 ? 1 : -1));
     };
