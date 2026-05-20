@@ -169,6 +169,7 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
       <div
         ref={outerRef}
         style={outerStyle}
+        data-no-close="true"
         onClick={(e) => e.stopPropagation()}
       >
         <div ref={mapRef} style={{ position: "absolute", inset: 0, filter: mapType === "roadmap" ? "grayscale(1)" : "grayscale(1) brightness(1.1)" }} />

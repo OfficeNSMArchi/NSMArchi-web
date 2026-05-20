@@ -180,6 +180,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
     isPointerDown.current = false;
   };
   const handleContainerClick = (e: React.MouseEvent) => {
+    if ((e.target as Element).closest('[data-no-close]')) return;
     if (isExpanded && !isDragging.current) onToggle(e.clientX, e.clientY);
   };
   const handleCoverClick = (e: React.MouseEvent) => {
