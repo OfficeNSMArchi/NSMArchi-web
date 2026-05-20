@@ -154,6 +154,15 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
     return () => el.removeEventListener("wheel", handler);
   }, []);
 
+  // native click 차단 — React 합성 이벤트보다 먼저 막아서 갤러리 닫힘 방지
+  useEffect(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    const stop = (e: MouseEvent) => e.stopPropagation();
+    el.addEventListener("click", stop);
+    return () => el.removeEventListener("click", stop);
+  }, []);
+
   // height 숫자 → 명시적 높이 박스 / 생략 → 부모를 inset-0으로 채움
   const outerStyle: React.CSSProperties = height != null
     ? { position: "relative", width: "100%", height, overflow: "hidden" }
@@ -204,7 +213,7 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
           {[{ label: "+", delta: 1 }, { label: "−", delta: -1 }].map(({ label, delta }) => (
             <button
               key={label}
-              onClick={(e) => {
+              onPointerDown={(e) => {
                 e.stopPropagation();
                 if (!mapInstanceRef.current) return;
                 const cur = mapInstanceRef.current.getZoom() ?? 15;
