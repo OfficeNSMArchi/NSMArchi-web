@@ -145,23 +145,12 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
 
   const outerRef = useRef<HTMLDivElement>(null);
 
-  // native wheel listener (passive:false) — React onWheel은 passive라 preventDefault 불가
+  // 스크롤 줌 비활성화 — 페이지 스크롤만 통과
   useEffect(() => {
     const el = outerRef.current;
     if (!el) return;
-    let lastZoomAt = 0;
-    const THROTTLE_MS = 300; // 줌 변경 최소 간격 (ms) — 높일수록 둔감
-    const handler = (e: WheelEvent) => {
-      if (!mapInstanceRef.current) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const now = Date.now();
-      if (now - lastZoomAt < THROTTLE_MS) return;
-      lastZoomAt = now;
-      const currentZoom = mapInstanceRef.current.getZoom() ?? 15;
-      mapInstanceRef.current.setZoom(currentZoom + (e.deltaY < 0 ? 1 : -1));
-    };
-    el.addEventListener("wheel", handler, { passive: false });
+    const handler = (e: WheelEvent) => { e.stopPropagation(); };
+    el.addEventListener("wheel", handler, { passive: true });
     return () => el.removeEventListener("wheel", handler);
   }, []);
 
@@ -209,6 +198,33 @@ export default function GoogleMap({ lat, lng, zoom = 15, height, mapType = "road
             <PinIcon />
           </div>
         )}
+        {/* 줌 버튼 */}
+        <div style={{ position: "absolute", right: 14, bottom: 40, zIndex: 10, display: "flex", flexDirection: "column", gap: 2 }}>
+          {[{ label: "+", delta: 1 }, { label: "−", delta: -1 }].map(({ label, delta }) => (
+            <button
+              key={label}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!mapInstanceRef.current) return;
+                const cur = mapInstanceRef.current.getZoom() ?? 15;
+                mapInstanceRef.current.setZoom(cur + delta);
+              }}
+              style={{
+                width: 28, height: 28,
+                background: "rgba(255,255,255,0.9)",
+                border: "1px solid rgba(0,0,0,0.15)",
+                borderRadius: 4,
+                fontSize: 18, lineHeight: 1,
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#333",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );
