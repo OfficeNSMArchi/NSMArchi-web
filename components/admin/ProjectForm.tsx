@@ -472,8 +472,19 @@ export default function ProjectForm() {
   function handleImageFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).filter((f) => isImageFile(f.name));
     if (files.length === 0) return;
+    // 업로드된 파일 + content 블록 참조 이름 전체에서 image-NNN 최대값 계산
+    // → 이미 fetch 실패한 프로젝트 이미지와 충돌 방지
+    const allExistingNames = [
+      data.coverImage,
+      ...data.content.filter(b => b.type === "image" && b.src).map(b => b.src!),
+    ];
     setUploadedFiles((prev) => {
-      const startIdx = prev.length + 1;
+      let maxIdx = 0;
+      for (const name of [...prev.map(f => f.name), ...allExistingNames]) {
+        const m = (name ?? "").match(/^image-(\d+)\./);
+        if (m) maxIdx = Math.max(maxIdx, parseInt(m[1]));
+      }
+      const startIdx = maxIdx + 1;
       const renamed = files.map((f, i) => {
         const ext = f.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const newName = `image-${String(startIdx + i).padStart(3, "0")}.${ext}`;

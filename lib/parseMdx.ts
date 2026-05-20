@@ -6,9 +6,19 @@ import { migrateStatusToStage } from "./stageSchema";
 export function parseMdx(mdxString: string): ProjectFormData {
   const { data } = matter(mdxString);
 
-  const content: ContentBlock[] = (data.content ?? []).map((block: Record<string, string>) => {
+  const content: ContentBlock[] = (data.content ?? []).map((block: Record<string, any>) => {
     if (block.type === "image") {
       return { type: "image" as const, src: block.src ?? "", alt: block.alt ?? "" };
+    }
+    if (block.type === "map") {
+      return {
+        type: "map" as const,
+        address: block.address ?? "",
+        lat: block.lat != null ? Number(block.lat) : undefined,
+        lng: block.lng != null ? Number(block.lng) : undefined,
+        zoom: block.zoom != null ? Number(block.zoom) : 15,
+        mapType: block.mapType,
+      };
     }
     return {
       type: "text" as const,
