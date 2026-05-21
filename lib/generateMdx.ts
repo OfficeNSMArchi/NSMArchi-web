@@ -141,8 +141,8 @@ export function generateMdx(data: ProjectFormData): string {
     data.images.filter(Boolean).forEach((img) => lines.push(`  - ${img}`));
   }
 
-  lines.push(`description: ${escapeYamlString(data.description || "To be updated")}`);
-  lines.push(`descriptionKo: ${escapeYamlString(data.descriptionKo || "To be updated")}`);
+  lines.push(`description: ${blockScalar(data.description || "To be updated", "")}`);
+  lines.push(`descriptionKo: ${blockScalar(data.descriptionKo || "To be updated", "")}`);
 
   if (data.content.length > 0) {
     lines.push(`content:`);
