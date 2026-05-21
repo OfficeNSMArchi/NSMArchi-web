@@ -648,7 +648,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       </button>
       {/* 스크롤 방향 토글 — 데스크탑 + 확장시만 노출 */}
       <button
-        onClick={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
+        onMouseEnter={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
         className={`hidden md:flex transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
         aria-label="스크롤 방향 전환"
