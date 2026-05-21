@@ -166,8 +166,8 @@ export function generateMdx(data: ProjectFormData): string {
         if (block.mapType && block.mapType !== "roadmap") lines.push(`    mapType: ${block.mapType}`);
       } else {
         lines.push(`  - type: text`);
-        lines.push(`    titleKo: ${escapeYamlString(block.titleKo || "-")}`);
-        lines.push(`    titleEn: ${escapeYamlString(block.titleEn || "-")}`);
+        if (block.titleKo) lines.push(`    titleKo: ${escapeYamlString(block.titleKo)}`);
+        if (block.titleEn) lines.push(`    titleEn: ${escapeYamlString(block.titleEn)}`);
         const bko = blockScalar(block.bodyKo || "", "    ");
         lines.push(`    bodyKo: ${bko}`);
         const ben = blockScalar(block.bodyEn || "", "    ");

@@ -13,7 +13,7 @@ import { CSS } from "@dnd-kit/utilities";
 // ── Types ────────────────────────────────────────────────────────
 
 type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean };
-type SeqText  = { id: string; kind: "text"; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
+type SeqText  = { id: string; kind: "text"; showTitle: boolean; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
 type SeqMap   = { id: string; kind: "map"; address: string; lat?: number; lng?: number; zoom: number; mapType?: "roadmap" | "satellite" | "hybrid"; expanded: boolean };
 type SeqItem  = SeqImage | SeqText | SeqMap;
 
@@ -61,7 +61,7 @@ function deriveContent(seq: SeqItem[]): ContentBlock[] {
     if (item.kind === "image" && item.checked) {
       content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined });
     } else if (item.kind === "text") {
-      content.push({ type: "text", titleKo: item.titleKo, titleEn: item.titleEn, bodyKo: item.bodyKo, bodyEn: item.bodyEn });
+      content.push({ type: "text", titleKo: item.showTitle ? item.titleKo : "", titleEn: item.showTitle ? item.titleEn : "", bodyKo: item.bodyKo, bodyEn: item.bodyEn });
     } else if (item.kind === "map") {
       content.push({ type: "map", address: item.address, lat: item.lat, lng: item.lng, zoom: item.zoom, mapType: item.mapType });
     }
@@ -89,6 +89,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
     } else if (block.type === "text") {
       seq.push({
         id: uid(), kind: "text",
+        showTitle: !!(block.titleKo || block.titleEn),
         titleKo: block.titleKo ?? "", titleEn: block.titleEn ?? "",
         bodyKo: block.bodyKo ?? "", bodyEn: block.bodyEn ?? "",
         expanded: false,
@@ -417,7 +418,7 @@ export default function ImageSequencer({
   function addTextBlock() {
     setSequence((s) => [
       ...s.map((i) => i.kind === "text" || i.kind === "map" || i.kind === "image" ? { ...i, expanded: false } : i),
-      { id: uid(), kind: "text", titleKo: "-", titleEn: "-", bodyKo: "-", bodyEn: "-", expanded: true },
+      { id: uid(), kind: "text", showTitle: true, titleKo: "-", titleEn: "-", bodyKo: "-", bodyEn: "-", expanded: true },
     ]);
     setDescExpanded(false);
   }
@@ -662,25 +663,33 @@ export default function ImageSequencer({
             <span className="text-xs font-semibold text-blue-600">📝 {badges.get(expandedText.id)} 편집</span>
             <button type="button" onClick={() => toggleExpand(expandedText.id)} className="text-xs text-gray-400 hover:text-gray-600">▲ 접기</button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">제목 (한국어)</label>
-              <input type="text" value={expandedText.titleKo} onChange={(e) => updateText(expandedText.id, { titleKo: e.target.value })}
-                placeholder="개요" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+          <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+            <input type="checkbox" checked={expandedText.showTitle}
+              onChange={(e) => updateText(expandedText.id, { showTitle: e.target.checked })}
+              className="w-3.5 h-3.5 accent-blue-500" />
+            <span className="text-xs text-gray-600">제목 표시</span>
+          </label>
+          {expandedText.showTitle && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">제목 (한국어)</label>
+                <input type="text" value={expandedText.titleKo} onChange={(e) => updateText(expandedText.id, { titleKo: e.target.value })}
+                  placeholder="개요" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+              </div>
+              <div>
+                <label className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                  <span>제목 (영어)</span>
+                  <button type="button" onClick={() => translateBlockTitle(expandedText.id, expandedText.titleKo)}
+                    disabled={translating === `${expandedText.id}-title` || !expandedText.titleKo.trim()}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-blue-100 hover:bg-blue-200 text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                    {translating === `${expandedText.id}-title` ? "번역 중…" : "✨ AI 번역"}
+                  </button>
+                </label>
+                <input type="text" value={expandedText.titleEn} onChange={(e) => updateText(expandedText.id, { titleEn: e.target.value })}
+                  placeholder="Overview" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+              </div>
             </div>
-            <div>
-              <label className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                <span>제목 (영어)</span>
-                <button type="button" onClick={() => translateBlockTitle(expandedText.id, expandedText.titleKo)}
-                  disabled={translating === `${expandedText.id}-title` || !expandedText.titleKo.trim()}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-blue-100 hover:bg-blue-200 text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                  {translating === `${expandedText.id}-title` ? "번역 중…" : "✨ AI 번역"}
-                </button>
-              </label>
-              <input type="text" value={expandedText.titleEn} onChange={(e) => updateText(expandedText.id, { titleEn: e.target.value })}
-                placeholder="Overview" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
-            </div>
-          </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">본문 (한국어)</label>

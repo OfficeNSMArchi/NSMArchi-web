@@ -48,7 +48,7 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
       }
       return {
         type: "text" as const,
-        title: { ko: block.titleKo ?? "", en: block.titleEn ?? "" },
+        title: (block.titleKo || block.titleEn) ? { ko: block.titleKo ?? "", en: block.titleEn ?? "" } : undefined,
         body: { ko: block.bodyKo ?? "", en: block.bodyEn ?? "" },
       };
     }),

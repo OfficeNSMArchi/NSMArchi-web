@@ -112,7 +112,7 @@ function TextBlock({ block, language, isExpanded }: {
     }`} style={{ width: w, minWidth: w, transitionDuration: `${EXPAND_DURATION}ms` }}>
       <div ref={innerRef} className="absolute inset-0 overflow-hidden">
         <div className={`${TEXT_PADDING}`} style={columnStyle}>
-          {block.title && (
+          {(block.title?.ko || block.title?.en) && (
             <h3 className="font-bold uppercase tracking-tight break-inside-avoid"
                 style={{ fontSize: FONT_BLOCK_TITLE }}>
               {language === 'ko' ? block.title.ko : block.title.en}
