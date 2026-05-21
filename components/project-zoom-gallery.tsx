@@ -45,7 +45,6 @@ const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바�
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
 const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
 const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
-const FONT_DESC  = 'clamp(0.3rem, 2.5cqw, 8pt)';
 
 function TextBlock({ block, language, isExpanded }: {
   block: { type: 'text'; title?: { ko: string; en: string }; body?: { ko: string; en: string } };
@@ -316,22 +315,12 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
 
         {/* Right Content: description always first, then content blocks (or fallback images) */}
 
-        {/* Description — always shown */}
-        <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-          <div
-            className="absolute inset-0 flex flex-col justify-start px-2 md:px-8 overflow-hidden py-4"
-            style={{ containerType: 'inline-size' }}
-          >
-            <p
-              className="text-gray-600 leading-relaxed md:leading-loose whitespace-pre-wrap font-light break-words w-full"
-              style={{ fontSize: FONT_DESC }}
-            >
-              {language === 'ko' ? project.descriptionKo : (project.description || project.descriptionKo)}
-            </p>
-          </div>
-        </div>
+        {/* Description — reuses TextBlock for consistent sizing, font, overflow */}
+        <TextBlock
+          block={{ type: 'text', body: { ko: project.descriptionKo, en: project.description || project.descriptionKo } }}
+          language={language}
+          isExpanded={isExpanded}
+        />
 
         {/* Content blocks if any, otherwise fallback images array */}
         {(project.content && project.content.length > 0) ? (
