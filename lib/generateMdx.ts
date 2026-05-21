@@ -6,6 +6,8 @@ export interface ContentBlock {
   caption?: string;
   captionKo?: string;
   showCaption?: boolean;
+  slides?: string[];
+  slideInterval?: number;
   // text
   titleKo?: string;
   titleEn?: string;
@@ -157,6 +159,11 @@ export function generateMdx(data: ProjectFormData): string {
         if (block.caption) lines.push(`    caption: ${escapeYamlString(block.caption)}`);
         if (block.captionKo) lines.push(`    captionKo: ${escapeYamlString(block.captionKo)}`);
         if (block.showCaption) lines.push(`    showCaption: true`);
+        if (block.slides?.length) {
+          lines.push(`    slideInterval: ${block.slideInterval ?? 3}`);
+          lines.push(`    slides:`);
+          block.slides.forEach(s => lines.push(`      - ${s}`));
+        }
       } else if (block.type === "map") {
         lines.push(`  - type: map`);
         if (block.address) lines.push(`    address: ${escapeYamlString(block.address)}`);

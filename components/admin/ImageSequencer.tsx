@@ -12,7 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 // ── Types ────────────────────────────────────────────────────────
 
-type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean };
+type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean; slides: string[]; slideInterval: number; };
 type SeqText  = { id: string; kind: "text"; showTitle: boolean; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
 type SeqMap   = { id: string; kind: "map"; address: string; lat?: number; lng?: number; zoom: number; mapType?: "roadmap" | "satellite" | "hybrid"; expanded: boolean };
 type SeqItem  = SeqImage | SeqText | SeqMap;
@@ -59,7 +59,7 @@ function deriveContent(seq: SeqItem[]): ContentBlock[] {
   const content: ContentBlock[] = [];
   for (const item of seq) {
     if (item.kind === "image" && item.checked) {
-      content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined });
+      content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined, slides: item.slides.length ? item.slides : undefined, slideInterval: item.slides.length ? item.slideInterval : undefined });
     } else if (item.kind === "text") {
       content.push({ type: "text", titleKo: item.showTitle ? item.titleKo : "", titleEn: item.showTitle ? item.titleEn : "", bodyKo: item.bodyKo, bodyEn: item.bodyEn });
     } else if (item.kind === "map") {
@@ -83,7 +83,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
     if (block.type === "image") {
       const fn = block.src ?? "";
       if (fn && !used.has(fn)) {
-        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false });
+        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false, slides: block.slides ?? [], slideInterval: block.slideInterval ?? 3 });
         used.add(fn);
       }
     } else if (block.type === "text") {
@@ -107,7 +107,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
   // Remaining uploaded files go into pool (unchecked)
   for (const f of files) {
     if (!used.has(f.name)) {
-      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false });
+      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3 });
     }
   }
 
@@ -325,7 +325,7 @@ export default function ImageSequencer({
         // New files go into pool (unchecked), but skip if already = coverImage
         const newItems = added
           .filter((f) => f.name !== coverImage)
-          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false }));
+          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3 }));
         return [...filtered, ...newItems];
       });
     }
@@ -393,6 +393,16 @@ export default function ImageSequencer({
 
   function updateImage(id: string, patch: Partial<SeqImage>) {
     setSequence((s) => s.map((i) => i.id === id && i.kind === "image" ? { ...i, ...patch } : i));
+  }
+
+  function toggleSlide(id: string, filename: string) {
+    setSequence((s) => s.map((i) => {
+      if (i.id !== id || i.kind !== "image") return i;
+      const slides = i.slides.includes(filename)
+        ? i.slides.filter(f => f !== filename)
+        : [...i.slides, filename];
+      return { ...i, slides };
+    }));
   }
 
   function toggleDesc() {
@@ -652,6 +662,57 @@ export default function ImageSequencer({
               />
               <span className="text-xs text-gray-600">갤러리에 캡션 표시</span>
             </label>
+
+            {/* 슬라이드쇼 */}
+            <div className="border-t border-amber-100 pt-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox"
+                    checked={expandedImg.slides.length > 0}
+                    onChange={(e) => updateImage(expandedImg.id, { slides: e.target.checked ? [] : [] })}
+                    className="w-3.5 h-3.5 accent-amber-500"
+                  />
+                  <span className="text-xs text-gray-600">슬라이드쇼 (여러 장 순환)</span>
+                </label>
+                {expandedImg.slides.length > 0 && (
+                  <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <span>전환 간격</span>
+                    <select value={expandedImg.slideInterval}
+                      onChange={(e) => updateImage(expandedImg.id, { slideInterval: Number(e.target.value) })}
+                      className="border border-gray-300 rounded px-1 py-0.5 text-xs bg-white">
+                      {[2, 3, 4, 5, 8].map(s => <option key={s} value={s}>{s}초</option>)}
+                    </select>
+                  </label>
+                )}
+              </div>
+              {uploadedFiles.length > 1 && (
+                <div className="grid grid-cols-6 gap-1">
+                  {uploadedFiles
+                    .filter(f => f.name !== expandedImg.filename)
+                    .map(f => {
+                      const isSelected = expandedImg.slides.includes(f.name);
+                      return (
+                        <button key={f.name} type="button"
+                          onClick={() => toggleSlide(expandedImg.id, f.name)}
+                          className={`relative aspect-square rounded overflow-hidden border-2 transition-colors ${
+                            isSelected ? "border-amber-400" : "border-gray-200 hover:border-gray-400"
+                          }`}
+                        >
+                          <img src={blobUrls.get(f.name)} alt={f.name} className="w-full h-full object-cover" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-amber-400/30 flex items-center justify-center">
+                              <span className="text-white text-xs font-bold drop-shadow">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+              {expandedImg.slides.length > 0 && (
+                <p className="text-[10px] text-gray-400">{expandedImg.slides.length}장 추가 · 총 {expandedImg.slides.length + 1}장 순환</p>
+              )}
+            </div>
           </div>
         );
       })()}

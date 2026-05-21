@@ -46,6 +46,30 @@ const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바�
 const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
 const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
 
+function SlideshowImage({ srcs, interval, alt, isExpanded }: {
+  srcs: string[]; interval: number; alt: string; isExpanded: boolean;
+}) {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (!isExpanded || srcs.length <= 1) return;
+    const id = setInterval(() => setCurrent(i => (i + 1) % srcs.length), interval * 1000);
+    return () => clearInterval(id);
+  }, [isExpanded, srcs.length, interval]);
+  return (
+    <>
+      {srcs.map((src, i) => (
+        <Image key={src} src={src} alt={alt} fill
+          className="object-cover transition-opacity duration-700"
+          style={{ opacity: i === current ? 1 : 0 }}
+          unoptimized={src.startsWith('blob:')}
+          draggable={false}
+          priority={i === 0}
+        />
+      ))}
+    </>
+  );
+}
+
 function TextBlock({ block, language, isExpanded }: {
   block: { type: 'text'; title?: { ko: string; en: string }; body?: { ko: string; en: string } };
   language: string;
@@ -345,11 +369,16 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                   <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                   }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
-                    <div className="absolute inset-0 flex flex-col justify-center" style={{ containerType: 'inline-size' }}>
-                      <div className="relative w-full h-full">
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
-                      </div>
-                    </div>
+                    {block.slides?.length ? (
+                      <SlideshowImage
+                        srcs={[block.src, ...block.slides]}
+                        interval={block.slideInterval ?? 3}
+                        alt={block.alt || "Detail"}
+                        isExpanded={isExpanded}
+                      />
+                    ) : (
+                      <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                    )}
                     {caption && (
                       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
                         <p className="text-white leading-relaxed font-light" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>

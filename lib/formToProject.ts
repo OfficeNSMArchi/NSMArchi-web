@@ -41,7 +41,16 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     images: data.images.map(resolve),
     content: data.content.map((block) => {
       if (block.type === "image") {
-        return { type: "image" as const, src: resolve(block.src ?? ""), alt: block.alt };
+        return {
+          type: "image" as const,
+          src: resolve(block.src ?? ""),
+          alt: block.alt,
+          caption: block.caption,
+          captionKo: block.captionKo,
+          showCaption: block.showCaption,
+          slides: block.slides?.map(resolve),
+          slideInterval: block.slideInterval,
+        };
       }
       if (block.type === "map") {
         return { type: "map" as const, address: block.address, lat: block.lat, lng: block.lng, zoom: block.zoom, mapType: block.mapType };

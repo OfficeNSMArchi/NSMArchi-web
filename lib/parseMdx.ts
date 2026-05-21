@@ -8,7 +8,16 @@ export function parseMdx(mdxString: string): ProjectFormData {
 
   const content: ContentBlock[] = (data.content ?? []).map((block: Record<string, any>) => {
     if (block.type === "image") {
-      return { type: "image" as const, src: block.src ?? "", alt: block.alt ?? "", caption: block.caption ?? "", captionKo: block.captionKo ?? "", showCaption: block.showCaption ?? false };
+      return {
+        type: "image" as const,
+        src: block.src ?? "",
+        alt: block.alt ?? "",
+        caption: block.caption ?? "",
+        captionKo: block.captionKo ?? "",
+        showCaption: block.showCaption ?? false,
+        slides: Array.isArray(block.slides) ? block.slides : undefined,
+        slideInterval: block.slideInterval != null ? Number(block.slideInterval) : undefined,
+      };
     }
     if (block.type === "map") {
       return {
