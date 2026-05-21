@@ -3,6 +3,9 @@ export interface ContentBlock {
   // image
   src?: string;
   alt?: string;
+  caption?: string;
+  captionKo?: string;
+  showCaption?: boolean;
   // text
   titleKo?: string;
   titleEn?: string;
@@ -151,6 +154,9 @@ export function generateMdx(data: ProjectFormData): string {
         lines.push(`  - type: image`);
         lines.push(`    src: ${block.src || '""'}`);
         if (block.alt) lines.push(`    alt: ${escapeYamlString(block.alt)}`);
+        if (block.caption) lines.push(`    caption: ${escapeYamlString(block.caption)}`);
+        if (block.captionKo) lines.push(`    captionKo: ${escapeYamlString(block.captionKo)}`);
+        if (block.showCaption) lines.push(`    showCaption: true`);
       } else if (block.type === "map") {
         lines.push(`  - type: map`);
         if (block.address) lines.push(`    address: ${escapeYamlString(block.address)}`);

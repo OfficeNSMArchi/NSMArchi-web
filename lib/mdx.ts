@@ -62,7 +62,7 @@ export function getAllProjects(): Project[] {
       images: (data.images ?? []).map((f: string) => resolveImgPath(id, f)),
       content: (data.content ?? []).map((block: any) =>
         block.type === 'image'
-          ? { type: 'image' as const, src: resolveImgPath(id, block.src), alt: block.alt }
+          ? { type: 'image' as const, src: resolveImgPath(id, block.src), alt: block.alt, caption: block.caption, captionKo: block.captionKo, showCaption: block.showCaption ?? false }
           : block.type === 'map'
           ? { type: 'map' as const, address: block.address, lat: block.lat, lng: block.lng, zoom: block.zoom, mapType: block.mapType }
           : {

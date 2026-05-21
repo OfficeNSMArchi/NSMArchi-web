@@ -317,11 +317,11 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
         {/* Right Content: description always first, then content blocks (or fallback images) */}
 
         {/* Description — always shown */}
-        <div className={`shrink-0 relative h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
           <div
-            className="absolute inset-0 flex flex-col justify-center px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
+            className="absolute inset-0 flex flex-col justify-start px-2 md:px-8 overflow-hidden py-4"
             style={{ containerType: 'inline-size' }}
           >
             <p
@@ -351,6 +351,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                 );
               }
               if (block.type === 'image') {
+                const caption = block.showCaption ? (language === 'ko' ? (block.captionKo || block.caption) : (block.caption || block.captionKo)) : null;
                 return (
                   <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -360,6 +361,13 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                         <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                       </div>
                     </div>
+                    {caption && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
+                        <p className="text-white leading-relaxed font-light" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
+                          {caption}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               }

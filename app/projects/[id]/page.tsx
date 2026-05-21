@@ -1,37 +1,37 @@
 import { notFound } from "next/navigation";
 import { allProjects } from "@/data/projects/index";
-import { ProjectDetailView } from "@/components/project-detail-view";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import React from "react";
+import { ProjectRedirect } from "./redirect";
 
 interface ProjectPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function generateStaticParams() {
-  return allProjects.map((project) => ({
-    id: project.id,
-  }));
+  return allProjects.map((project) => ({ id: project.id }));
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
   const project = allProjects.find((p) => p.id === id);
 
-  if (!project) {
-    notFound();
+  if (!project) notFound();
+
+  const visibleOn = project.visibleOn ?? project.companies ?? [];
+  let targetUrl = '/';
+  let storageKey = 'nsm-home';
+
+  if (!visibleOn.includes('nsm')) {
+    if (project.companies?.includes('metalogic')) {
+      targetUrl = '/metalogic';
+      storageKey = 'metalogic';
+    } else if (project.companies?.includes('ndb')) {
+      targetUrl = '/ndb';
+      storageKey = 'ndb';
+    } else if (project.companies?.includes('snp')) {
+      targetUrl = '/';
+      storageKey = 'nsm-home';
+    }
   }
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      <SiteHeader />
-      <main className="flex-grow" style={{ paddingTop: 'var(--header-h, 64px)', height: 'calc(100vh - var(--header-h, 64px))' }}>
-        <ProjectDetailView project={project} />
-      </main>
-      <SiteFooter />
-    </div>
-  );
+  return <ProjectRedirect id={id} targetUrl={targetUrl} storageKey={storageKey} />;
 }

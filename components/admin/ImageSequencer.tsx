@@ -12,7 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 // ── Types ────────────────────────────────────────────────────────
 
-type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean };
+type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean };
 type SeqText  = { id: string; kind: "text"; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
 type SeqMap   = { id: string; kind: "map"; address: string; lat?: number; lng?: number; zoom: number; mapType?: "roadmap" | "satellite" | "hybrid"; expanded: boolean };
 type SeqItem  = SeqImage | SeqText | SeqMap;
@@ -40,7 +40,7 @@ function deriveContent(seq: SeqItem[]): ContentBlock[] {
   const content: ContentBlock[] = [];
   for (const item of seq) {
     if (item.kind === "image" && item.checked) {
-      content.push({ type: "image", src: item.filename, alt: "" });
+      content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined });
     } else if (item.kind === "text") {
       content.push({ type: "text", titleKo: item.titleKo, titleEn: item.titleEn, bodyKo: item.bodyKo, bodyEn: item.bodyEn });
     } else if (item.kind === "map") {
@@ -64,7 +64,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
     if (block.type === "image") {
       const fn = block.src ?? "";
       if (fn && !used.has(fn)) {
-        seq.push({ id: uid(), kind: "image", filename: fn, checked: true });
+        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false });
         used.add(fn);
       }
     } else if (block.type === "text") {
@@ -87,7 +87,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
   // Remaining uploaded files go into pool (unchecked)
   for (const f of files) {
     if (!used.has(f.name)) {
-      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false });
+      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false });
     }
   }
 
@@ -161,9 +161,9 @@ function FixedDescCard({ expanded, onToggle }: { expanded: boolean; onToggle: ()
 
 // ── Sortable Image Item ───────────────────────────────────────────
 
-function SortableImageItem({ item, badge, blobUrl, onCheck, onRemove }: {
+function SortableImageItem({ item, badge, blobUrl, onCheck, onRemove, onCaptionToggle }: {
   item: SeqImage; badge: string; blobUrl?: string;
-  onCheck: () => void; onRemove: () => void;
+  onCheck: () => void; onRemove: () => void; onCaptionToggle: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -173,7 +173,9 @@ function SortableImageItem({ item, badge, blobUrl, onCheck, onRemove }: {
       {...attributes}
       {...listeners}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-      className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 flex-shrink-0 select-none cursor-grab active:cursor-grabbing touch-none ${item.checked ? "border-blue-500" : "border-gray-200"}`}
+      className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 flex-shrink-0 select-none cursor-grab active:cursor-grabbing touch-none ${
+        item.expanded ? "border-amber-400" : item.checked ? "border-blue-500" : "border-gray-200"
+      }`}
       onClick={onCheck}
     >
       {blobUrl
@@ -184,6 +186,15 @@ function SortableImageItem({ item, badge, blobUrl, onCheck, onRemove }: {
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
         className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto"
       >✕</button>
+      {item.checked && (
+        <button type="button"
+          onClick={(e) => { e.stopPropagation(); onCaptionToggle(); }}
+          className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto ${
+            item.captionKo || item.captionEn ? "bg-amber-500" : "bg-black/60 hover:bg-amber-500"
+          }`}
+          title="캡션 편집"
+        >T</button>
+      )}
       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center gap-1 pointer-events-none">
         <p className="text-white text-[9px] truncate flex-1">{item.filename}</p>
         {badge && <span className="text-[8px] bg-blue-500 text-white px-1 rounded shrink-0 leading-4">{badge}</span>}
@@ -294,7 +305,7 @@ export default function ImageSequencer({
         // New files go into pool (unchecked), but skip if already = coverImage
         const newItems = added
           .filter((f) => f.name !== coverImage)
-          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false }));
+          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false }));
         return [...filtered, ...newItems];
       });
     }
@@ -343,18 +354,33 @@ export default function ImageSequencer({
 
   function toggleExpand(id: string) {
     setSequence((s) => s.map((i) => {
-      if (i.kind !== "text") return i;
-      return { ...i, expanded: i.id === id ? !i.expanded : false };
+      if (i.kind === "text") return { ...i, expanded: i.id === id ? !i.expanded : false };
+      if (i.kind === "image") return { ...i, expanded: false };
+      return i;
     }));
-    // Also close desc if a text block is being opened
     setDescExpanded(false);
+  }
+
+  function toggleExpandImage(id: string) {
+    setSequence((s) => s.map((i) => {
+      if (i.kind === "image") return { ...i, expanded: i.id === id ? !i.expanded : false };
+      if (i.kind === "text") return { ...i, expanded: false };
+      if (i.kind === "map") return { ...i, expanded: false };
+      return i;
+    }));
+    setDescExpanded(false);
+  }
+
+  function updateImage(id: string, patch: Partial<SeqImage>) {
+    setSequence((s) => s.map((i) => i.id === id && i.kind === "image" ? { ...i, ...patch } : i));
   }
 
   function toggleDesc() {
     const willOpen = !descExpanded;
     if (willOpen) {
-      // Close all text block editors
-      setSequence((s) => s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i));
+      setSequence((s) => s.map((i) =>
+        i.kind === "text" || i.kind === "image" || i.kind === "map" ? { ...i, expanded: false } : i
+      ));
     }
     setDescExpanded(willOpen);
   }
@@ -371,7 +397,7 @@ export default function ImageSequencer({
 
   function addTextBlock() {
     setSequence((s) => [
-      ...s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i.kind === "map" ? { ...i, expanded: false } : i),
+      ...s.map((i) => i.kind === "text" || i.kind === "map" || i.kind === "image" ? { ...i, expanded: false } : i),
       { id: uid(), kind: "text", titleKo: "-", titleEn: "-", bodyKo: "-", bodyEn: "-", expanded: true },
     ]);
     setDescExpanded(false);
@@ -379,7 +405,7 @@ export default function ImageSequencer({
 
   function addMapBlock() {
     setSequence((s) => [
-      ...s.map((i) => i.kind === "text" ? { ...i, expanded: false } : i.kind === "map" ? { ...i, expanded: false } : i),
+      ...s.map((i) => i.kind === "text" || i.kind === "map" || i.kind === "image" ? { ...i, expanded: false } : i),
       { id: uid(), kind: "map", address: "", zoom: 15, expanded: true },
     ]);
     setDescExpanded(false);
@@ -389,6 +415,7 @@ export default function ImageSequencer({
     setSequence((s) => s.map((i) => {
       if (i.kind === "map") return { ...i, expanded: i.id === id ? !i.expanded : false };
       if (i.kind === "text") return { ...i, expanded: false };
+      if (i.kind === "image") return { ...i, expanded: false };
       return i;
     }));
     setDescExpanded(false);
@@ -466,6 +493,11 @@ export default function ImageSequencer({
     if (en) updateText(id, { bodyEn: en });
   }
 
+  async function translateImageCaption(id: string, ko: string) {
+    const en = await translateText(ko, `${id}-caption`);
+    if (en) updateImage(id, { captionEn: en });
+  }
+
   const badges = getBadges(sequence);
   const expandedText = sequence.find((i) => i.kind === "text" && i.expanded) as SeqText | undefined;
   const coverBlobUrl = coverImage ? blobUrls.get(coverImage) : undefined;
@@ -507,6 +539,7 @@ export default function ImageSequencer({
                       blobUrl={blobUrls.get(item.filename)}
                       onCheck={() => toggleCheck(item.id)}
                       onRemove={() => removeItem(item.id)}
+                      onCaptionToggle={() => toggleExpandImage(item.id)}
                     />
                   );
                 }
@@ -559,6 +592,49 @@ export default function ImageSequencer({
           </div>
         </div>
       )}
+
+      {/* Inline editor — image caption */}
+      {(() => {
+        const expandedImg = sequence.find((i) => i.kind === "image" && i.expanded) as SeqImage | undefined;
+        if (!expandedImg) return null;
+        const imgBadge = badges.get(expandedImg.id) ?? "이미지";
+        return (
+          <div className="border border-amber-200 rounded-lg p-4 bg-amber-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-amber-600">🖼 {imgBadge} 캡션 편집</span>
+              <button type="button" onClick={() => toggleExpandImage(expandedImg.id)} className="text-xs text-gray-400 hover:text-gray-600">▲ 접기</button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">캡션 (한국어)</label>
+                <input type="text" value={expandedImg.captionKo} onChange={(e) => updateImage(expandedImg.id, { captionKo: e.target.value })}
+                  placeholder="이미지 설명..." className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+              </div>
+              <div>
+                <label className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                  <span>캡션 (영어)</span>
+                  <button type="button" onClick={() => translateImageCaption(expandedImg.id, expandedImg.captionKo)}
+                    disabled={translating === `${expandedImg.id}-caption` || !expandedImg.captionKo.trim()}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-amber-100 hover:bg-amber-200 text-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                    {translating === `${expandedImg.id}-caption` ? "번역 중…" : "✨ AI 번역"}
+                  </button>
+                </label>
+                <input type="text" value={expandedImg.captionEn} onChange={(e) => updateImage(expandedImg.id, { captionEn: e.target.value })}
+                  placeholder="Image description..." className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+              <input
+                type="checkbox"
+                checked={expandedImg.showCaption}
+                onChange={(e) => updateImage(expandedImg.id, { showCaption: e.target.checked })}
+                className="w-3.5 h-3.5 accent-amber-500"
+              />
+              <span className="text-xs text-gray-600">갤러리에 캡션 표시</span>
+            </label>
+          </div>
+        );
+      })()}
 
       {/* Inline editor — text block */}
       {expandedText && (
