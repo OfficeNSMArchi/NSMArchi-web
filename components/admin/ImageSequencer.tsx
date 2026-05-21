@@ -31,6 +31,25 @@ export interface ImageSequencerProps {
   onRemoveFile: (name: string) => void;
 }
 
+// ── Auto-resizing textarea ────────────────────────────────────────
+
+function AutoTextarea({ value, onChange, placeholder, className }: {
+  value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string; className?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }, [value]);
+  return (
+    <textarea ref={ref} value={value} onChange={onChange} placeholder={placeholder} rows={1}
+      className={`${className} resize-none overflow-hidden`} />
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 function uid() { return Math.random().toString(36).slice(2); }
@@ -575,8 +594,8 @@ export default function ImageSequencer({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">설명 (한국어)</label>
-              <textarea value={descriptionKo} onChange={(e) => onDescriptionChange(e.target.value, description)}
-                placeholder="프로젝트 소개..." rows={4} className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-y" />
+              <AutoTextarea value={descriptionKo} onChange={(e) => onDescriptionChange(e.target.value, description)}
+                placeholder="프로젝트 소개..." className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
             </div>
             <div>
               <label className="flex items-center justify-between text-xs text-gray-600 mb-1">
@@ -586,8 +605,8 @@ export default function ImageSequencer({
                   {translating === "desc" ? "번역 중…" : "✨ AI 번역"}
                 </button>
               </label>
-              <textarea value={description} onChange={(e) => onDescriptionChange(descriptionKo, e.target.value)}
-                placeholder="Project overview..." rows={4} className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-y" />
+              <AutoTextarea value={description} onChange={(e) => onDescriptionChange(descriptionKo, e.target.value)}
+                placeholder="Project overview..." className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
             </div>
           </div>
         </div>
@@ -665,8 +684,8 @@ export default function ImageSequencer({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">본문 (한국어)</label>
-              <textarea value={expandedText.bodyKo} onChange={(e) => updateText(expandedText.id, { bodyKo: e.target.value })}
-                placeholder="한국어 설명" rows={4} className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-y" />
+              <AutoTextarea value={expandedText.bodyKo} onChange={(e) => updateText(expandedText.id, { bodyKo: e.target.value })}
+                placeholder="한국어 설명" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
             </div>
             <div>
               <label className="flex items-center justify-between text-xs text-gray-600 mb-1">
@@ -677,8 +696,8 @@ export default function ImageSequencer({
                   {translating === `${expandedText.id}-body` ? "번역 중…" : "✨ AI 번역"}
                 </button>
               </label>
-              <textarea value={expandedText.bodyEn} onChange={(e) => updateText(expandedText.id, { bodyEn: e.target.value })}
-                placeholder="English description" rows={4} className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-y" />
+              <AutoTextarea value={expandedText.bodyEn} onChange={(e) => updateText(expandedText.id, { bodyEn: e.target.value })}
+                placeholder="English description" className="w-full border border-gray-300 rounded px-2 py-1 text-sm" />
             </div>
           </div>
         </div>
