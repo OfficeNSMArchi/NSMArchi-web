@@ -8,6 +8,7 @@ import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
 import { formatArea, getSizeLabel } from '@/lib/projectUtils';
+import { STAGES, getStageLabel, type StageType } from '@/lib/stageSchema';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 import GoogleMap from '@/components/GoogleMap';
 
@@ -274,7 +275,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
       */}
       <div
         ref={scrollRef}
-        className={`flex items-stretch transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`flex items-stretch gap-[2px] md:gap-1 transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isExpanded
             ? 'overflow-x-auto hide-scrollbar cursor-pointer'
             : keepOpen
@@ -292,29 +293,78 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
       >
         {/* Left Content (Margin Space: 15% on mobile, 25% on desktop) */}
         <div
-          className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
-            isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-          style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}
+          className="shrink-0 relative"
+          style={{ ...MARGIN_STYLE }}
         >
           <div
-            className="absolute inset-0 flex flex-col items-end justify-center text-right space-y-4 md:space-y-6 px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
-            style={{ containerType: 'inline-size' }}
+            className="absolute inset-0 flex flex-col items-end justify-start text-right px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
+            style={{ containerType: 'inline-size', gap: 'clamp(0.25rem, 0.6cqw, 0.75rem)' }}
           >
+            {/* 브랜드 로고 — 항상 표시 (NDB / SNP / Metalogic) */}
+            {project.companies?.some(c => ['ndb', 'snp', 'metalogic'].includes(c)) && (
+              <div className="flex items-center justify-end gap-2 w-full">
+                {project.companies.includes('ndb') && (
+                  <img src="/branding/ndb-v.svg" alt="NDB" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+                )}
+                {project.companies.includes('snp') && (
+                  <img src="/branding/snp-v.svg" alt="SNP" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+                )}
+                {project.companies.includes('metalogic') && (
+                  <img src="/branding/meta-logic-v.svg" alt="Metalogic" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+                )}
+              </div>
+            )}
+
+            {/* 제목 + 로케이션 — 항상 표시 */}
             <h2
               className="font-bold font-mono tracking-tighter uppercase leading-tight break-words w-full"
               style={{ fontSize: FONT_TITLE }}
             >
               {title}
             </h2>
+            <p className="uppercase tracking-[0.2em] text-gray-500 font-bold break-words w-full"
+               style={{ fontSize: FONT_META }}>
+              {language === 'ko' ? project.locationKo : project.location}
+            </p>
 
-            <div className="flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-bold w-full"
-                 style={{ fontSize: FONT_META }}
+            {/* 연도 · 면적 · 용도 — 확장시만 표시 */}
+            <div
+              className={`flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-bold w-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+              style={{ fontSize: FONT_META, transitionDuration: `${EXPAND_DURATION}ms` }}
             >
-               <p className="break-words">{language === 'ko' ? project.locationKo : project.location}</p>
-               <p>{project.year?.slice(0, 4)}</p>
-               <p>{formatArea(project.area)}{getSizeLabel(project.area) ? ` · ${getSizeLabel(project.area)}` : ""}</p>
-               <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
+              <p>{project.year?.slice(0, 4)}</p>
+              <p>{formatArea(project.area)}{getSizeLabel(project.area) ? ` · ${getSizeLabel(project.area)}` : ""}</p>
+              <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
+              {/* 스테이지 레이블 + 프로그레스 바 */}
+              {project.stageType && project.stage !== undefined && (() => {
+                const stageList = STAGES[project.stageType as StageType]
+                  ?.filter(s => !(project.stageType === 'design' && s.key === 7));
+                if (!stageList) return null;
+                const current = Math.min(project.stage as number, stageList[stageList.length - 1]?.key ?? 99);
+                const label = getStageLabel(project.stageType as StageType, project.stage as number, language === 'ko' ? 'ko' : 'en');
+                return (
+                  <div className="flex flex-col items-end gap-[4px] w-full pt-1">
+                    <span className="uppercase tracking-[0.15em] opacity-70" style={{ fontSize: FONT_META }}>
+                      {label}
+                    </span>
+                    <div className="flex items-center justify-end gap-[2px] w-full">
+                      {stageList.map((s) => (
+                        <div
+                          key={s.key}
+                          className="flex-shrink-0"
+                          style={{
+                            width: '10px', height: '4px',
+                            transform: 'skewX(-20deg)',
+                            background: s.key <= current ? 'currentColor' : 'rgba(128,128,128,0.2)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -344,16 +394,6 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           />
           ) : (
             <div className="absolute inset-0 bg-gray-100" />
-          )}
-          {!isExpanded && (
-            <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4 md:p-10">
-              <p
-                className="text-white font-bold tracking-tight uppercase drop-shadow-lg"
-                style={{ fontSize: 'clamp(1.125rem, 3vw, 24pt)' }}
-              >
-                {title}
-              </p>
-            </div>
           )}
         </motion.div>
 
