@@ -157,40 +157,81 @@ function BlockItem({ id, index, block, total, images, onRemove, onUpdate }: Bloc
           )}
         </div>
       ) : block.type === "image" ? (
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">파일명 / URL</label>
-            {images.length > 0 ? (
-              <select
-                value={block.src || ""}
-                onChange={(e) => onUpdate({ src: e.target.value })}
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
-              >
-                <option value="">— 선택 —</option>
-                {images.map((img) => (
-                  <option key={img} value={img}>{img}</option>
-                ))}
-              </select>
-            ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">파일명 / URL</label>
+              {images.length > 0 ? (
+                <select
+                  value={block.src || ""}
+                  onChange={(e) => onUpdate({ src: e.target.value })}
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm bg-white"
+                >
+                  <option value="">— 선택 —</option>
+                  {images.map((img) => (
+                    <option key={img} value={img}>{img}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={block.src || ""}
+                  onChange={(e) => onUpdate({ src: e.target.value })}
+                  placeholder="01-exterior.png"
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                />
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Alt 텍스트</label>
               <input
                 type="text"
-                value={block.src || ""}
-                onChange={(e) => onUpdate({ src: e.target.value })}
-                placeholder="01-exterior.png"
+                value={block.alt || ""}
+                onChange={(e) => onUpdate({ alt: e.target.value })}
+                placeholder="Exterior view"
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
               />
-            )}
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Alt 텍스트</label>
-            <input
-              type="text"
-              value={block.alt || ""}
-              onChange={(e) => onUpdate({ alt: e.target.value })}
-              placeholder="Exterior view"
-              className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-            />
-          </div>
+          {/* 슬라이드별 캡션 — slides가 있을 때만 표시 */}
+          {block.slides && block.slides.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">슬라이드별 캡션</p>
+              {[block.src, ...block.slides].map((src, i) => {
+                const caps = block.slideCaptions ?? [];
+                const cap = caps[i] ?? { en: "", ko: "" };
+                return (
+                  <div key={i} className="border border-gray-100 rounded p-2 space-y-1">
+                    <p className="text-xs text-gray-400 truncate">{i === 0 ? `[커버] ${src}` : `[${i}] ${src}`}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={cap.ko || ""}
+                        onChange={(e) => {
+                          const next = [...(block.slideCaptions ?? [block.src, ...(block.slides ?? [])].map(() => ({ en: "", ko: "" })))];
+                          next[i] = { ...next[i], ko: e.target.value };
+                          onUpdate({ slideCaptions: next });
+                        }}
+                        placeholder="한국어 캡션"
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="text"
+                        value={cap.en || ""}
+                        onChange={(e) => {
+                          const next = [...(block.slideCaptions ?? [block.src, ...(block.slides ?? [])].map(() => ({ en: "", ko: "" })))];
+                          next[i] = { ...next[i], en: e.target.value };
+                          onUpdate({ slideCaptions: next });
+                        }}
+                        placeholder="English caption"
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

@@ -8,6 +8,7 @@ export interface ContentBlock {
   showCaption?: boolean;
   slides?: string[];
   slideInterval?: number;
+  slideCaptions?: { en?: string; ko?: string }[];
   // text
   titleKo?: string;
   titleEn?: string;
@@ -163,6 +164,13 @@ export function generateMdx(data: ProjectFormData): string {
           lines.push(`    slideInterval: ${block.slideInterval ?? 3}`);
           lines.push(`    slides:`);
           block.slides.forEach(s => lines.push(`      - ${s}`));
+          if (block.slideCaptions?.length) {
+            lines.push(`    slideCaptions:`);
+            block.slideCaptions.forEach(c => {
+              lines.push(`      - en: ${escapeYamlString(c.en || "")}`);
+              lines.push(`        ko: ${escapeYamlString(c.ko || "")}`);
+            });
+          }
         }
       } else if (block.type === "map") {
         lines.push(`  - type: map`);

@@ -46,8 +46,9 @@ const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바�
 const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
 const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
 
-function SlideshowImage({ srcs, interval, alt, isExpanded }: {
+function SlideshowImage({ srcs, interval, alt, isExpanded, captions, language }: {
   srcs: string[]; interval: number; alt: string; isExpanded: boolean;
+  captions?: { en?: string; ko?: string }[]; language: string;
 }) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
@@ -55,6 +56,8 @@ function SlideshowImage({ srcs, interval, alt, isExpanded }: {
     const id = setInterval(() => setCurrent(i => (i + 1) % srcs.length), interval * 1000);
     return () => clearInterval(id);
   }, [isExpanded, srcs.length, interval]);
+  const caption = captions?.[current];
+  const captionText = caption ? (language === 'ko' ? (caption.ko || caption.en) : (caption.en || caption.ko)) : null;
   return (
     <>
       {srcs.map((src, i) => (
@@ -66,6 +69,16 @@ function SlideshowImage({ srcs, interval, alt, isExpanded }: {
           priority={i === 0}
         />
       ))}
+      {captions && captions.length > 0 && (
+        <div
+          className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none transition-opacity duration-700"
+          style={{ opacity: captionText ? 1 : 0, containerType: 'inline-size' }}
+        >
+          <p className="text-white leading-relaxed font-light" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
+            {captionText || ' '}
+          </p>
+        </div>
+      )}
     </>
   );
 }
@@ -375,6 +388,8 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                         interval={block.slideInterval ?? 3}
                         alt={block.alt || "Detail"}
                         isExpanded={isExpanded}
+                        captions={block.slideCaptions}
+                        language={language}
                       />
                     ) : (
                       <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
