@@ -29,7 +29,7 @@ const EXPAND_DURATION = 1500; // ms — 열기/닫기 애니메이션 속도
 const DESKTOP_ZOOM_IN = 1.1; // 데스크탑에서 프로젝트 열릴 때 적용할 줌 배율
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
 const GRID_TO_LIST_SCROLL_DURATION = 2500; // ms — 그리드→리스트 전환 후 해당 프로젝트로 스크롤 속도
-const TEXT_PADDING = 'p-3 md:p-8'; // 텍스트 슬라이드 안쪽 여백
+const TEXT_PADDING = 'px-3 md:px-8'; // 텍스트 슬라이드 안쪽 여백 (상하 제거)
 
 // 레이아웃 비율 — globals.css의 --photo-w, --margin-w 와 단일 소스로 연동
 // 닫힌 상태 중앙정렬: --margin-w*2 + --photo-w = 100% 이면 완벽 중앙
@@ -46,6 +46,120 @@ const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바�
 // 패널 내 폰트 — cqw = 패널 너비의 1% (containerType: inline-size 기준)
 const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
 const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
+
+const SITE_URL = 'https://nsmarchi.com';
+
+async function loadKakaoSDK(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const win = window as any;
+    if (win.Kakao) { resolve(win.Kakao); return; }
+    const script = document.createElement('script');
+    script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+    script.onload = () => resolve(win.Kakao);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+function ShareButtons({ projectId, title, imageUrl }: {
+  projectId: string;
+  title: string;
+  imageUrl?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const pageUrl = `${SITE_URL}/projects/${projectId}`;
+
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(pageUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }, [pageUrl]);
+
+  const open = (url: string) =>
+    window.open(url, '_blank', 'width=620,height=450,scrollbars=yes');
+
+  const shareKakao = async () => {
+    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+    if (!kakaoKey) { copyLink(); return; }
+    try {
+      const Kakao = await loadKakaoSDK();
+      if (!Kakao.isInitialized()) Kakao.init(kakaoKey);
+      const absImage = imageUrl
+        ? (imageUrl.startsWith('http') ? imageUrl : `${SITE_URL}${imageUrl}`)
+        : `${SITE_URL}/og-default.png`;
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title,
+          imageUrl: absImage,
+          link: { mobileWebUrl: pageUrl, webUrl: pageUrl },
+        },
+        buttons: [{ title: '보러가기', link: { mobileWebUrl: pageUrl, webUrl: pageUrl } }],
+      });
+    } catch { copyLink(); }
+  };
+
+  const shareInstagram = async () => {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try { await navigator.share({ title, url: pageUrl }); return; } catch {}
+    }
+    copyLink();
+  };
+
+  const fullImageUrl = imageUrl
+    ? (imageUrl.startsWith('http') ? imageUrl : `${SITE_URL}${imageUrl}`)
+    : undefined;
+
+  const btns = [
+    {
+      key: 'kakao', label: 'KakaoTalk', action: shareKakao,
+      icon: <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.73 1.6 5.13 4.01 6.6-.15.56-.56 2.04-.64 2.35-.1.39.14.38.3.28.12-.08 1.96-1.32 2.76-1.85.5.07 1.02.1 1.57.1 5.52 0 10-3.48 10-7.8S17.52 3 12 3z"/></svg>,
+    },
+    {
+      key: 'instagram', label: 'Instagram', action: shareInstagram,
+      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>,
+    },
+    {
+      key: 'linkedin', label: 'LinkedIn',
+      action: () => open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`),
+      icon: <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
+    },
+    {
+      key: 'facebook', label: 'Facebook',
+      action: () => open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`),
+      icon: <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
+    },
+    {
+      key: 'pinterest', label: 'Pinterest',
+      action: () => open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(pageUrl)}${fullImageUrl ? `&media=${encodeURIComponent(fullImageUrl)}` : ''}&description=${encodeURIComponent(title)}`),
+      icon: <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>,
+    },
+    {
+      key: 'copy', label: copied ? '복사됨!' : '링크 복사', action: copyLink,
+      icon: copied
+        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+    },
+  ];
+
+  return (
+    <div className="flex items-center gap-[6px]" data-no-close>
+      {btns.map(btn => (
+        <button
+          key={btn.key}
+          type="button"
+          title={btn.label}
+          onClick={(e) => { e.stopPropagation(); btn.action(); }}
+          className="shrink-0 flex items-center justify-center text-black transition-all hover:opacity-50 active:scale-90"
+        >
+          {btn.icon}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function SlideshowImage({ srcs, interval, alt, isExpanded, firstCaption, captions, language }: {
   srcs: string[]; interval: number; alt: string; isExpanded: boolean;
@@ -264,7 +378,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
   return (
     <div
       id={`project-${project.id}`}
-      className="relative w-full mx-auto flex flex-col items-center mb-[5px]"
+      className="relative w-full mx-auto flex flex-col items-center mb-6"
       style={{ maxWidth: MAX_CONTAINER_WIDTH }}
     >
       {/* 
@@ -317,25 +431,38 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
 
             {/* 제목 + 로케이션 — 항상 표시 */}
             <h2
-              className="font-bold font-mono tracking-tighter uppercase leading-tight break-words w-full"
+              className="font-normal font-sans tracking-tighter uppercase leading-tight break-words w-full"
               style={{ fontSize: FONT_TITLE }}
             >
               {title}
             </h2>
-            <p className="uppercase tracking-[0.2em] text-gray-500 font-bold break-words w-full"
+            <p className="uppercase tracking-[0.2em] text-gray-500 font-normal break-words w-full"
                style={{ fontSize: FONT_META }}>
               {language === 'ko' ? project.locationKo : project.location}
             </p>
 
             {/* 연도 · 면적 · 용도 — 확장시만 표시 */}
             <div
-              className={`flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-bold w-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              className={`flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-normal w-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
               }`}
               style={{ fontSize: FONT_META, transitionDuration: `${EXPAND_DURATION}ms` }}
             >
               <p>{project.year?.slice(0, 4)}</p>
-              <p>{formatArea(project.area)}{getSizeLabel(project.area) ? ` · ${getSizeLabel(project.area)}` : ""}</p>
+              {getSizeLabel(project.area) ? (
+                <p className="flex items-baseline justify-end gap-0 w-full">
+                  {(['S', 'M', 'L', 'XL'] as const).map((s, i) => (
+                    <React.Fragment key={s}>
+                      {i > 0 && <span style={{ color: 'rgba(156,163,175,0.4)' }}>.</span>}
+                      <span style={{ color: s === getSizeLabel(project.area) ? '#1f2937' : 'rgba(156,163,175,0.4)' }}>{s}</span>
+                    </React.Fragment>
+                  ))}
+                  <span className="mx-1 opacity-40">—</span>
+                  <span>{formatArea(project.area)}</span>
+                </p>
+              ) : (
+                <p>{formatArea(project.area)}</p>
+              )}
               <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
               {/* 스테이지 레이블 + 프로그레스 바 */}
               {project.stageType && project.stage !== undefined && (() => {
@@ -366,6 +493,21 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                 );
               })()}
             </div>
+          </div>
+          {/* 공유 버튼 — 우 하단 고정 */}
+          <div
+            className={`absolute bottom-3 right-2 md:right-8 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+            style={{ transitionDuration: `${EXPAND_DURATION}ms` }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShareButtons
+              projectId={project.id}
+              title={title}
+              imageUrl={project.image}
+            />
           </div>
         </div>
 
@@ -691,9 +833,12 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
                   />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                    <p className="text-white text-lg font-bold tracking-tight uppercase">{title}</p>
+                  {/* 타이틀 — 좌측 하단 고정 */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
+                    <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
                   </div>
+                  {/* 호버 시 살짝 밝아지는 오버레이 */}
+                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
                 </motion.button>
               );
             })}
