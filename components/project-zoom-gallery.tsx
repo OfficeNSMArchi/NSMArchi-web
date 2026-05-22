@@ -392,14 +392,14 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                   }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
                     {block.slides?.length ? (
-                      // 슬라이드쇼: 1번=정적캡션, 2번+=slideCaptions[current-1]
+                      // 슬라이드쇼: showCaption이 두 캡션 모두 통제
                       <SlideshowImage
                         srcs={[block.src, ...block.slides]}
                         interval={block.slideInterval ?? 3}
                         alt={block.alt || "Detail"}
                         isExpanded={isExpanded}
                         firstCaption={staticCaption}
-                        captions={block.slideCaptions}
+                        captions={block.showCaption ? block.slideCaptions : undefined}
                         language={language}
                       />
                     ) : (

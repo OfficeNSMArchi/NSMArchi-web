@@ -84,7 +84,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
     if (block.type === "image") {
       const fn = block.src ?? "";
       if (fn && !used.has(fn)) {
-        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false, slides: block.slides ?? [], slideInterval: block.slideInterval ?? 3, slideCaptions: (block.slideCaptions ?? []).map(c => ({ ko: c.ko ?? "", en: c.en ?? "" })) });
+        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? true, expanded: false, slides: block.slides ?? [], slideInterval: block.slideInterval ?? 3, slideCaptions: (block.slideCaptions ?? []).map(c => ({ ko: c.ko ?? "", en: c.en ?? "" })) });
         used.add(fn);
       }
     } else if (block.type === "text") {
@@ -108,7 +108,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
   // Remaining uploaded files go into pool (unchecked)
   for (const f of files) {
     if (!used.has(f.name)) {
-      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] });
+      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: true, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] });
     }
   }
 
@@ -326,7 +326,7 @@ export default function ImageSequencer({
         // New files go into pool (unchecked), but skip if already = coverImage
         const newItems = added
           .filter((f) => f.name !== coverImage)
-          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] }));
+          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: true, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] }));
         return [...filtered, ...newItems];
       });
     }
@@ -676,7 +676,7 @@ export default function ImageSequencer({
                 onChange={(e) => updateImage(expandedImg.id, { showCaption: e.target.checked })}
                 className="w-3.5 h-3.5 accent-amber-500"
               />
-              <span className="text-xs text-gray-600">갤러리에 캡션 표시</span>
+              <span className="text-xs text-gray-600">캡션 표시</span>
             </label>
 
             {/* 슬라이드쇼 */}
