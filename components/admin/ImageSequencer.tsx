@@ -12,7 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 // ── Types ────────────────────────────────────────────────────────
 
-type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean; slides: string[]; slideInterval: number; };
+type SeqImage = { id: string; kind: "image"; filename: string; checked: boolean; captionKo: string; captionEn: string; showCaption: boolean; expanded: boolean; slides: string[]; slideInterval: number; slideCaptions: { ko: string; en: string }[]; };
 type SeqText  = { id: string; kind: "text"; showTitle: boolean; titleKo: string; titleEn: string; bodyKo: string; bodyEn: string; expanded: boolean };
 type SeqMap   = { id: string; kind: "map"; address: string; lat?: number; lng?: number; zoom: number; mapType?: "roadmap" | "satellite" | "hybrid"; expanded: boolean };
 type SeqItem  = SeqImage | SeqText | SeqMap;
@@ -59,7 +59,8 @@ function deriveContent(seq: SeqItem[]): ContentBlock[] {
   const content: ContentBlock[] = [];
   for (const item of seq) {
     if (item.kind === "image" && item.checked) {
-      content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined, slides: item.slides.length ? item.slides : undefined, slideInterval: item.slides.length ? item.slideInterval : undefined });
+      const hasSlideCaptions = item.slideCaptions.some(c => c.ko || c.en);
+      content.push({ type: "image", src: item.filename, alt: "", caption: item.captionEn || undefined, captionKo: item.captionKo || undefined, showCaption: item.showCaption || undefined, slides: item.slides.length ? item.slides : undefined, slideInterval: item.slides.length ? item.slideInterval : undefined, slideCaptions: hasSlideCaptions ? item.slideCaptions.map(c => ({ ko: c.ko || undefined, en: c.en || undefined })) : undefined });
     } else if (item.kind === "text") {
       content.push({ type: "text", titleKo: item.showTitle ? item.titleKo : "", titleEn: item.showTitle ? item.titleEn : "", bodyKo: item.bodyKo, bodyEn: item.bodyEn });
     } else if (item.kind === "map") {
@@ -83,7 +84,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
     if (block.type === "image") {
       const fn = block.src ?? "";
       if (fn && !used.has(fn)) {
-        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false, slides: block.slides ?? [], slideInterval: block.slideInterval ?? 3 });
+        seq.push({ id: uid(), kind: "image", filename: fn, checked: true, captionKo: block.captionKo ?? "", captionEn: block.caption ?? "", showCaption: block.showCaption ?? false, expanded: false, slides: block.slides ?? [], slideInterval: block.slideInterval ?? 3, slideCaptions: (block.slideCaptions ?? []).map(c => ({ ko: c.ko ?? "", en: c.en ?? "" })) });
         used.add(fn);
       }
     } else if (block.type === "text") {
@@ -107,7 +108,7 @@ function buildSequence(files: File[], cover: string, content: ContentBlock[]): S
   // Remaining uploaded files go into pool (unchecked)
   for (const f of files) {
     if (!used.has(f.name)) {
-      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3 });
+      seq.push({ id: uid(), kind: "image", filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] });
     }
   }
 
@@ -325,7 +326,7 @@ export default function ImageSequencer({
         // New files go into pool (unchecked), but skip if already = coverImage
         const newItems = added
           .filter((f) => f.name !== coverImage)
-          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3 }));
+          .map((f) => ({ id: uid(), kind: "image" as const, filename: f.name, checked: false, captionKo: "", captionEn: "", showCaption: false, expanded: false, slides: [], slideInterval: 3, slideCaptions: [] }));
         return [...filtered, ...newItems];
       });
     }
@@ -528,6 +529,21 @@ export default function ImageSequencer({
     if (en) updateImage(id, { captionEn: en });
   }
 
+  async function translateSlideCaption(id: string, slideIdx: number, ko: string) {
+    const en = await translateText(ko, `${id}-slide-${slideIdx}`);
+    if (en) updateSlideCaption(id, slideIdx, "en", en);
+  }
+
+  function updateSlideCaption(id: string, slideIdx: number, field: "ko" | "en", value: string) {
+    setSequence(s => s.map(i => {
+      if (i.id !== id || i.kind !== "image") return i;
+      const caps = [...i.slideCaptions];
+      while (caps.length <= slideIdx) caps.push({ ko: "", en: "" });
+      caps[slideIdx] = { ...caps[slideIdx], [field]: value };
+      return { ...i, slideCaptions: caps };
+    }));
+  }
+
   const badges = getBadges(sequence);
   const expandedText = sequence.find((i) => i.kind === "text" && i.expanded) as SeqText | undefined;
   const coverBlobUrl = coverImage ? blobUrls.get(coverImage) : undefined;
@@ -710,7 +726,47 @@ export default function ImageSequencer({
                 </div>
               )}
               {expandedImg.slides.length > 0 && (
-                <p className="text-[10px] text-gray-400">{expandedImg.slides.length}장 추가 · 총 {expandedImg.slides.length + 1}장 순환</p>
+                <>
+                  <p className="text-[10px] text-gray-400">{expandedImg.slides.length}장 추가 · 총 {expandedImg.slides.length + 1}장 순환</p>
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs font-semibold text-amber-700">슬라이드별 이름</p>
+                    {[expandedImg.filename, ...expandedImg.slides].map((src, si) => {
+                      const cap = expandedImg.slideCaptions[si] ?? { ko: "", en: "" };
+                      return (
+                        <div key={si} className="bg-white border border-amber-100 rounded p-2 space-y-1.5">
+                          <p className="text-[10px] text-gray-400 truncate">{si === 0 ? `[1] ${src}` : `[${si + 1}] ${src}`}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={cap.ko}
+                              onChange={(e) => updateSlideCaption(expandedImg.id, si, "ko", e.target.value)}
+                              placeholder="한국어 이름"
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                            />
+                            <div className="flex gap-1">
+                              <input
+                                type="text"
+                                value={cap.en}
+                                onChange={(e) => updateSlideCaption(expandedImg.id, si, "en", e.target.value)}
+                                placeholder="English name"
+                                className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-1 text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => translateSlideCaption(expandedImg.id, si, cap.ko)}
+                                disabled={translating === `${expandedImg.id}-slide-${si}` || !cap.ko.trim()}
+                                className="shrink-0 px-1.5 py-1 rounded text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                title="AI 번역"
+                              >
+                                {translating === `${expandedImg.id}-slide-${si}` ? "…" : "✨"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           </div>
