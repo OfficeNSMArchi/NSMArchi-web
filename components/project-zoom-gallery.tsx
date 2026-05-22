@@ -46,8 +46,9 @@ const FONT_BLOCK_BODY   = 'clamp(0.4rem, 0.65vw, 11pt)'; // 컨테이너가 바�
 const FONT_TITLE = 'clamp(0.4rem, 3cqw, 12pt)';
 const FONT_META  = 'clamp(0.3rem, 2.5cqw, 10pt)';
 
-function SlideshowImage({ srcs, interval, alt, isExpanded, captions, language }: {
+function SlideshowImage({ srcs, interval, alt, isExpanded, firstCaption, captions, language }: {
   srcs: string[]; interval: number; alt: string; isExpanded: boolean;
+  firstCaption?: { ko?: string; en?: string } | null;
   captions?: { en?: string; ko?: string }[]; language: string;
 }) {
   const [current, setCurrent] = useState(0);
@@ -56,8 +57,14 @@ function SlideshowImage({ srcs, interval, alt, isExpanded, captions, language }:
     const id = setInterval(() => setCurrent(i => (i + 1) % srcs.length), interval * 1000);
     return () => clearInterval(id);
   }, [isExpanded, srcs.length, interval]);
-  const caption = captions?.[current];
-  const captionText = caption ? (language === 'ko' ? (caption.ko || caption.en) : (caption.en || caption.ko)) : null;
+
+  // index 0 → 정적 캐션, index 1+ → slideCaptions[current-1]
+  const rawCaption = current === 0 ? firstCaption : captions?.[current - 1];
+  const captionText = rawCaption
+    ? (language === 'ko' ? (rawCaption.ko || rawCaption.en) : (rawCaption.en || rawCaption.ko))
+    : null;
+  const showOverlay = !!(firstCaption || captions?.length);
+
   return (
     <>
       {srcs.map((src, i) => (
@@ -69,12 +76,12 @@ function SlideshowImage({ srcs, interval, alt, isExpanded, captions, language }:
           priority={i === 0}
         />
       ))}
-      {captions && captions.length > 0 && (
+      {showOverlay && (
         <div
           className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none transition-opacity duration-700"
           style={{ opacity: captionText ? 1 : 0, containerType: 'inline-size' }}
         >
-          <p className="text-white leading-relaxed font-light" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
+          <p className="text-white leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
             {captionText || ' '}
           </p>
         </div>
@@ -377,29 +384,35 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                 );
               }
               if (block.type === 'image') {
-                const caption = block.showCaption ? (language === 'ko' ? (block.captionKo || block.caption) : (block.caption || block.captionKo)) : null;
+                const staticCaption = block.showCaption
+                  ? { ko: block.captionKo, en: block.caption }
+                  : null;
                 return (
                   <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                   }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
                     {block.slides?.length ? (
+                      // 슬라이드쇼: 1번=정적캡션, 2번+=slideCaptions[current-1]
                       <SlideshowImage
                         srcs={[block.src, ...block.slides]}
                         interval={block.slideInterval ?? 3}
                         alt={block.alt || "Detail"}
                         isExpanded={isExpanded}
+                        firstCaption={staticCaption}
                         captions={block.slideCaptions}
                         language={language}
                       />
                     ) : (
-                      <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
-                    )}
-                    {caption && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
-                        <p className="text-white leading-relaxed font-light" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
-                          {caption}
-                        </p>
-                      </div>
+                      <>
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                        {staticCaption && (staticCaption.ko || staticCaption.en) && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
+                            <p className="text-white leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
+                              {language === 'ko' ? (staticCaption.ko || staticCaption.en) : (staticCaption.en || staticCaption.ko)}
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );

@@ -730,26 +730,26 @@ export default function ImageSequencer({
                   <p className="text-[10px] text-gray-400">{expandedImg.slides.length}장 추가 · 총 {expandedImg.slides.length + 1}장 순환</p>
                   <div className="space-y-2 pt-1">
                     <p className="text-xs font-semibold text-amber-700">슬라이드별 이름</p>
-                    {[expandedImg.filename, ...expandedImg.slides].map((src, si) => {
+                    {expandedImg.slides.map((src, si) => {
                       const cap = expandedImg.slideCaptions[si] ?? { ko: "", en: "" };
                       return (
                         <div key={si} className="bg-white border border-amber-100 rounded p-2 space-y-1.5">
-                          <p className="text-[10px] text-gray-400 truncate">{si === 0 ? `[1] ${src}` : `[${si + 1}] ${src}`}</p>
+                          <p className="text-[10px] text-gray-400 truncate">`[${si + 2}] ${src}`</p>
                           <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="text"
+                            <textarea
                               value={cap.ko}
                               onChange={(e) => updateSlideCaption(expandedImg.id, si, "ko", e.target.value)}
                               placeholder="한국어 이름"
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                              rows={2}
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-xs resize-none"
                             />
                             <div className="flex gap-1">
-                              <input
-                                type="text"
+                              <textarea
                                 value={cap.en}
                                 onChange={(e) => updateSlideCaption(expandedImg.id, si, "en", e.target.value)}
                                 placeholder="English name"
-                                className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-1 text-xs"
+                                rows={2}
+                                className="flex-1 min-w-0 border border-gray-300 rounded px-2 py-1 text-xs resize-none"
                               />
                               <button
                                 type="button"
