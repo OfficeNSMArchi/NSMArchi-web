@@ -12,19 +12,6 @@ import { STAGES, getStageLabel, type StageType } from '@/lib/stageSchema';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 import GoogleMap from '@/components/GoogleMap';
 
-const ArrowsOutIcon = () => (
-  <svg width="24" height="36" viewBox="0 0 24 36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6,13 3,18 6,23" />
-    <polyline points="18,13 21,18 18,23" />
-  </svg>
-);
-const ArrowsInIcon = () => (
-  <svg width="24" height="36" viewBox="0 0 24 36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6,13 9,18 6,23" />
-    <polyline points="18,13 15,18 18,23" />
-  </svg>
-);
-
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <g style={{ transformOrigin: '32px 32px', transform: vertical ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)' }}>
@@ -694,31 +681,41 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
         if (dist < closestDist) { closestDist = dist; closestId = p.id; }
       });
       savedExpandedIds.current = expandedIds;
-      setExpandedIds(new Set());
-      setDisplayMode(mode);
+      setFading(true);
       setTimeout(() => {
-        if (!closestId) return;
-        const el = document.getElementById(`project-${closestId}`);
-        if (!el) return;
-        const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
-        const startY = window.scrollY;
-        const diff = targetY - startY;
-        const duration = 1500;
-        const startTime = performance.now();
-        const step = (now: number) => {
-          const t = Math.min((now - startTime) / duration, 1);
-          const ease = 1 - Math.pow(1 - t, 3);
-          window.scrollTo(0, startY + diff * ease);
-          if (t < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }, 1200);
+        setExpandedIds(new Set());
+        setDisplayMode(mode);
+        setFading(false);
+        setTimeout(() => {
+          if (!closestId) return;
+          const el = document.getElementById(`project-${closestId}`);
+          if (!el) return;
+          const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+          const startY = window.scrollY;
+          const diff = targetY - startY;
+          const duration = 1500;
+          const startTime = performance.now();
+          const step = (now: number) => {
+            const t = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 3);
+            window.scrollTo(0, startY + diff * ease);
+            if (t < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }, 300);
+      }, 300);
     } else {
       setFading(true);
       setTimeout(() => {
         setDisplayMode(mode);
         setFading(false);
-        setTimeout(() => setExpandedIds(savedExpandedIds.current), 600);
+        setTimeout(() => {
+          setExpandedIds(savedExpandedIds.current);
+          const ids = [...savedExpandedIds.current];
+          if (ids.length === 1) {
+            scrollToCenter(ids[0], GRID_TO_LIST_SCROLL_DURATION, 0);
+          }
+        }, 300);
       }, 300);
     }
   }, [displayMode, expandedIds, projects]);
@@ -731,8 +728,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   const [pinned, setPinned] = useState(true);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const gestureVel = useRef({ x: 0, y: 0 });
-  const [autoFocus, setAutoFocus] = useState(true);
-
   const handleToggle = (id: string, x: number, y: number) => {
     if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
@@ -845,46 +840,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     return () => document.removeEventListener('click', handler);
   }, [pinned]);
 
-  // 오토 포커스 모드 — 스크롤 시 뷰포트 중앙에 가장 가까운 프로젝트 자동 열기
-  useEffect(() => {
-    if (!autoFocus) return;
-    const handleScroll = () => {
-      const openY = window.innerHeight / 2;
-      const closeThreshold = window.innerHeight * 0.3;
-
-      setExpandedIds(prev => {
-        const next = new Set(prev);
-
-        // 화면 위로 벗어난 프로젝트 닫기
-        projects.forEach(p => {
-          if (!next.has(p.id)) return;
-          const el = document.getElementById(`project-${p.id}`);
-          if (!el) return;
-          const rect = el.getBoundingClientRect();
-          const projCenter = rect.top + rect.height / 2;
-          if (projCenter < closeThreshold || projCenter > window.innerHeight * 0.7) next.delete(p.id);
-        });
-
-        // 중앙에 가장 가까운 프로젝트 열기
-        let closestId: string | null = null;
-        let closestDist = Infinity;
-        projects.forEach(p => {
-          const el = document.getElementById(`project-${p.id}`);
-          if (!el) return;
-          const rect = el.getBoundingClientRect();
-          const dist = Math.abs(rect.top + rect.height / 2 - openY);
-          if (dist < closestDist) { closestDist = dist; closestId = p.id; }
-        });
-        if (closestId) next.add(closestId);
-
-        return next;
-      });
-    };
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [autoFocus, projects]);
-
   // 확장 중 커스텀 커서 + 마우스 방향으로 스크롤 모드 전환
   useEffect(() => {
     if (!anyExpanded) {
@@ -988,23 +943,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
         aria-label="뷰 전환"
       >
         {viewMode === 'list' ? <Grid2X2 size={20} /> : <List size={20} />}
-      </button>
-      {/* 오토 포커스 토글 */}
-      <button
-        onClick={() => {
-          if (autoFocus) {
-            setAutoFocus(false);
-            setExpandedIds(new Set());
-            try { sessionStorage.removeItem(storageKey) } catch {}
-          } else {
-            setAutoFocus(true);
-          }
-        }}
-        className="hidden md:flex p-0"
-        style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
-        aria-label="오토 포커스 토글"
-      >
-        {autoFocus ? <ArrowsInIcon /> : <ArrowsOutIcon />}
       </button>
       {/* 전체 닫기 */}
       <button
