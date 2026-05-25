@@ -12,20 +12,30 @@ import { STAGES, getStageLabel, type StageType } from '@/lib/stageSchema';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 import GoogleMap from '@/components/GoogleMap';
 
+const ArrowsOutIcon = () => (
+  <svg width="24" height="36" viewBox="0 0 24 36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6,13 3,18 6,23" />
+    <polyline points="18,13 21,18 18,23" />
+  </svg>
+);
+const ArrowsInIcon = () => (
+  <svg width="24" height="36" viewBox="0 0 24 36" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6,13 9,18 6,23" />
+    <polyline points="18,13 15,18 18,23" />
+  </svg>
+);
+
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
-  <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    {/* 휠 — 세로 타원, 중심 (22,22) */}
-    <rect x="15" y="12" width="14" height="20" rx="7" />
-    <line x1="22" y1="16" x2="22" y2="20" />
-    {/* 꺾쇠 — 세로 모드시 90도 회전 */}
-    <g transform={vertical ? 'rotate(90, 22, 22)' : undefined}>
-      <polyline points="10,16 4,22 10,28" />
-      <polyline points="34,16 40,22 34,28" />
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <g style={{ transformOrigin: '32px 32px', transform: vertical ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)' }}>
+      <polyline points="14,24 6,32 14,40" />
+      <polyline points="50,24 58,32 50,40" />
     </g>
   </svg>
 );
 
-const EXPAND_DURATION = 1500; // ms — 열기/닫기 애니메이션 속도
+const EXPAND_DURATION = 1500; // ms — 열기 애니메이션 속도
+const COLLAPSE_DURATION = 1000; // ms — 닫기 애니메이션 속도
 const DESKTOP_ZOOM_IN = 1.1; // 데스크탑에서 프로젝트 열릴 때 적용할 줌 배율
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
 const GRID_TO_LIST_SCROLL_DURATION = 2500; // ms — 그리드→리스트 전환 후 해당 프로젝트로 스크롤 속도
@@ -152,7 +162,7 @@ function ShareButtons({ projectId, title, imageUrl }: {
           type="button"
           title={btn.label}
           onClick={(e) => { e.stopPropagation(); btn.action(); }}
-          className="shrink-0 flex items-center justify-center text-black transition-all hover:opacity-50 active:scale-90"
+          className="shrink-0 flex items-center justify-center text-gray-400 transition-all hover:opacity-50 active:scale-90"
         >
           {btn.icon}
         </button>
@@ -268,7 +278,7 @@ function TextBlock({ block, language, isExpanded }: {
   return (
     <div className={`shrink-0 relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
       isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-    }`} style={{ width: w, minWidth: w, transitionDuration: `${EXPAND_DURATION}ms` }}>
+    }`} style={{ width: w, minWidth: w, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
       <div ref={innerRef} className="absolute inset-0 overflow-hidden">
         <div className={`${TEXT_PADDING}`} style={columnStyle}>
           {(block.title?.ko || block.title?.en) && (
@@ -313,7 +323,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
     if (isExpanded) {
       setKeepOpen(true);
     } else {
-      const timer = setTimeout(() => setKeepOpen(false), EXPAND_DURATION);
+      const timer = setTimeout(() => setKeepOpen(false), COLLAPSE_DURATION);
       return () => clearTimeout(timer);
     }
   }, [isExpanded]);
@@ -393,12 +403,12 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           isExpanded
             ? 'overflow-x-auto hide-scrollbar cursor-pointer'
             : keepOpen
-              ? 'overflow-x-auto hide-scrollbar pointer-events-none'
+              ? 'overflow-x-auto hide-scrollbar pointer-events-none w-full'
               : 'overflow-hidden w-full'
         }`}
         style={{
-          transitionDuration: `${EXPAND_DURATION}ms`,
-          ...((isExpanded || keepOpen) ? { width: '100vw' } : {}),
+          transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms`,
+          ...(isExpanded ? { width: '100vw' } : {}),
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -411,24 +421,9 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           style={{ ...MARGIN_STYLE }}
         >
           <div
-            className="absolute inset-0 flex flex-col items-end justify-start text-right px-2 md:px-8 overflow-y-auto hide-scrollbar py-4"
+            className="absolute inset-0 flex flex-col items-end justify-start text-right px-1 md:px-4 overflow-y-auto hide-scrollbar"
             style={{ containerType: 'inline-size', gap: 'clamp(0.25rem, 0.6cqw, 0.75rem)' }}
           >
-            {/* 브랜드 로고 — 항상 표시 (NDB / SNP / Metalogic) */}
-            {project.companies?.some(c => ['ndb', 'snp', 'metalogic'].includes(c)) && (
-              <div className="flex items-center justify-end gap-2 w-full">
-                {project.companies.includes('ndb') && (
-                  <img src="/branding/ndb-v.svg" alt="NDB" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
-                )}
-                {project.companies.includes('snp') && (
-                  <img src="/branding/snp-v.svg" alt="SNP" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
-                )}
-                {project.companies.includes('metalogic') && (
-                  <img src="/branding/meta-logic-v.svg" alt="Metalogic" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
-                )}
-              </div>
-            )}
-
             {/* 제목 + 로케이션 — 항상 표시 */}
             <h2
               className="font-normal font-sans tracking-tighter uppercase leading-tight break-words w-full"
@@ -441,14 +436,14 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               {language === 'ko' ? project.locationKo : project.location}
             </p>
 
-            {/* 연도 · 면적 · 용도 — 확장시만 표시 */}
+            {/* 스테이지 · 연도 · 면적 · 용도 — 확장시만 표시 */}
             <div
               className={`flex flex-col space-y-1 uppercase tracking-[0.2em] text-gray-500 font-normal w-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
               }`}
-              style={{ fontSize: FONT_META, transitionDuration: `${EXPAND_DURATION}ms` }}
+              style={{ fontSize: FONT_META, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}
             >
-              <p>{project.year?.slice(0, 4)}</p>
+              <p className="break-words mt-[5em]">{language === 'ko' ? project.useKo : project.use}</p>
               {getSizeLabel(project.area) ? (
                 <p className="flex items-baseline justify-end gap-0 w-full">
                   {(['S', 'M', 'L', 'XL'] as const).map((s, i) => (
@@ -463,19 +458,18 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               ) : (
                 <p>{formatArea(project.area)}</p>
               )}
-              <p className="break-words">{language === 'ko' ? project.useKo : project.use}</p>
-              {/* 스테이지 레이블 + 프로그레스 바 */}
-              {project.stageType && project.stage !== undefined && (() => {
+              {/* 스테이지/연도 + 프로그레스 바 */}
+              {project.stageType && project.stage !== undefined ? (() => {
                 const stageList = STAGES[project.stageType as StageType]
                   ?.filter(s => !(project.stageType === 'design' && s.key === 7));
-                if (!stageList) return null;
+                if (!stageList) return <><div className="h-[2.5em]" /><p>{project.year?.slice(0, 4)}</p></>;
                 const current = Math.min(project.stage as number, stageList[stageList.length - 1]?.key ?? 99);
                 const label = getStageLabel(project.stageType as StageType, project.stage as number, language === 'ko' ? 'ko' : 'en');
                 return (
-                  <div className="flex flex-col items-end gap-[4px] w-full pt-1">
-                    <span className="uppercase tracking-[0.15em] opacity-70" style={{ fontSize: FONT_META }}>
-                      {label}
-                    </span>
+                  <div className="flex flex-col items-end gap-[4px] w-full mt-[2.5em]">
+                    <p className="w-full">
+                      {label}{project.year ? <span className="ml-[0.4em]">{project.year.slice(0, 4)}</span> : null}
+                    </p>
                     <div className="flex items-center justify-end gap-[2px] w-full">
                       {stageList.map((s) => (
                         <div
@@ -491,15 +485,15 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                     </div>
                   </div>
                 );
-              })()}
+              })() : <p className="mt-[2.5em]">{project.year?.slice(0, 4)}</p>}
             </div>
           </div>
           {/* 공유 버튼 — 우 하단 고정 */}
           <div
-            className={`absolute bottom-3 right-2 md:right-8 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+            className={`absolute bottom-0 right-1 md:right-4 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
               isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
-            style={{ transitionDuration: `${EXPAND_DURATION}ms` }}
+            style={{ transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
@@ -520,7 +514,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               ? 'shadow-xl'
               : 'cursor-pointer shadow-sm hover:shadow-md hover:opacity-95'
           }`}
-          style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}
+          style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}
           onClick={handleCoverClick}
         >
           {project.image ? (
@@ -536,6 +530,25 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           />
           ) : (
             <div className="absolute inset-0 bg-gray-100" />
+          )}
+          {/* 브랜드 로고 오버레이 — 확장시만 표시 */}
+          {project.companies?.some(c => ['ndb', 'snp', 'metalogic'].includes(c)) && (
+            <div
+              className={`absolute top-3 left-3 flex items-center gap-2 pointer-events-none transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                isExpanded ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}
+            >
+              {project.companies.includes('ndb') && (
+                <img src="/branding/ndb-v.svg" alt="NDB" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+              )}
+              {project.companies.includes('snp') && (
+                <img src="/branding/snp-v.svg" alt="SNP" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+              )}
+              {project.companies.includes('metalogic') && (
+                <img src="/branding/meta-logic-v.svg" alt="Metalogic" className="h-5 md:h-6 w-auto object-contain" draggable={false} />
+              )}
+            </div>
           )}
         </motion.div>
 
@@ -560,7 +573,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                 return (
                   <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative overflow-hidden transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
                     <GoogleMap lat={block.lat} lng={block.lng} zoom={block.zoom ?? 15} mapType={block.mapType} />
                   </div>
                 );
@@ -572,7 +585,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                 return (
                   <div key={`content-${i}`} className={`shrink-0 aspect-[4/3] relative transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+                  }`} style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
                     {block.slides?.length ? (
                       // 슬라이드쇼: showCaption이 두 캡션 모두 통제
                       <SlideshowImage
@@ -605,7 +618,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
           project.images?.filter(img => img !== project.image).map((img, i) => (
             <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
               isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-            }`} style={{ ...PHOTO_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }}>
+            }`} style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
               <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={85} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
             </div>
           ))
@@ -614,7 +627,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
         {/* Spacer at the end for comfortable scrolling */}
            <div className={`shrink-0 h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`} style={{ ...MARGIN_STYLE, transitionDuration: `${EXPAND_DURATION}ms` }} />
+          }`} style={{ ...MARGIN_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }} />
       </div>
 
     </div>
@@ -634,14 +647,37 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     }
     try {
       const saved = sessionStorage.getItem(storageKey);
-      if (saved) setExpandedIds(new Set(JSON.parse(saved)));
+      if (saved) {
+        const ids: string[] = JSON.parse(saved);
+        setExpandedIds(new Set(ids));
+        if (ids.length === 1) scrollToCenter(ids[0], 1200, 400);
+      }
     } catch {}
-  }, [storageKey, defaultExpandedId]);
+  }, [storageKey, defaultExpandedId]); // eslint-disable-line react-hooks/exhaustive-deps
   const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
+
+  const scrollToCenter = (id: string, duration: number, delay = 0) => {
+    setTimeout(() => {
+      const el = document.getElementById(`project-${id}`);
+      if (!el) return;
+      const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+      const startY = window.scrollY;
+      const diff = targetY - startY;
+      if (Math.abs(diff) < 2) return;
+      const startTime = performance.now();
+      const step = (now: number) => {
+        const t = Math.min((now - startTime) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        window.scrollTo(0, startY + diff * ease);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, delay);
+  };
 
 
   const switchView = useCallback((mode: 'list' | 'grid') => {
@@ -692,22 +728,28 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   }, [viewMode, switchView]);
 
   const [buttonPos, setButtonPos] = useState<{ x: number; y: number } | null>(null);
-  const [pinned, setPinned] = useState(false);
+  const [pinned, setPinned] = useState(true);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const gestureVel = useRef({ x: 0, y: 0 });
+  const [autoFocus, setAutoFocus] = useState(true);
 
   const handleToggle = (id: string, x: number, y: number) => {
     if (!pinned) setButtonPos({ x, y });
     setExpandedIds(prev => {
-      const next = new Set(prev);
       const isOpening = !prev.has(id);
       if (isOpening) {
+        const next = new Set(prev);
         next.add(id);
+        scrollToCenter(id, EXPAND_DURATION, 100);
+        setTimeout(() => {
+          window.history.pushState(null, '', `/projects/${id}`);
+        }, 0);
+        return next;
       } else {
-        next.delete(id);
+        // 이미 열린 상태 — 닫지 않고 화면 중앙으로 스크롤
+        scrollToCenter(id, 800, 0);
+        return prev;
       }
-      setTimeout(() => {
-        window.history.pushState(null, '', isOpening ? `/projects/${id}` : window.location.pathname);
-      }, 0);
-      return next;
     });
   };
 
@@ -764,10 +806,11 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     const target = anyExpanded ? DESKTOP_ZOOM_IN : 1;
     const from = parseFloat((el.style.zoom as string) || '1') || 1;
     if (from === target) return;
+    const duration = anyExpanded ? EXPAND_DURATION : COLLAPSE_DURATION;
     const startTime = performance.now();
     let rafId: number;
     const step = (now: number) => {
-      const t = Math.min((now - startTime) / EXPAND_DURATION, 1);
+      const t = Math.min((now - startTime) / duration, 1);
       const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       el.style.zoom = String(from + (target - from) * ease);
       if (t < 1) { rafId = requestAnimationFrame(step); }
@@ -780,6 +823,11 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   useEffect(() => {
     const el = wrapperRef.current;
     return () => { if (el) el.style.zoom = ''; };
+  }, []);
+
+  // 버튼 초기 위치 — 좌 하단 고정
+  useEffect(() => {
+    setButtonPos({ x: 250, y: window.innerHeight - 55 });
   }, []);
 
   const controlRef = useRef<HTMLDivElement>(null);
@@ -796,6 +844,70 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, [pinned]);
+
+  // 오토 포커스 모드 — 스크롤 시 뷰포트 중앙에 가장 가까운 프로젝트 자동 열기
+  useEffect(() => {
+    if (!autoFocus) return;
+    const handleScroll = () => {
+      const openY = window.innerHeight / 2;
+      const closeThreshold = window.innerHeight * 0.3;
+
+      setExpandedIds(prev => {
+        const next = new Set(prev);
+
+        // 화면 위로 벗어난 프로젝트 닫기
+        projects.forEach(p => {
+          if (!next.has(p.id)) return;
+          const el = document.getElementById(`project-${p.id}`);
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const projCenter = rect.top + rect.height / 2;
+          if (projCenter < closeThreshold || projCenter > window.innerHeight * 0.7) next.delete(p.id);
+        });
+
+        // 중앙에 가장 가까운 프로젝트 열기
+        let closestId: string | null = null;
+        let closestDist = Infinity;
+        projects.forEach(p => {
+          const el = document.getElementById(`project-${p.id}`);
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const dist = Math.abs(rect.top + rect.height / 2 - openY);
+          if (dist < closestDist) { closestDist = dist; closestId = p.id; }
+        });
+        if (closestId) next.add(closestId);
+
+        return next;
+      });
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [autoFocus, projects]);
+
+  // 확장 중 커스텀 커서 + 마우스 방향으로 스크롤 모드 전환
+  useEffect(() => {
+    if (!anyExpanded) {
+      setMousePos(null);
+      gestureVel.current = { x: 0, y: 0 };
+      return;
+    }
+    const handleMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      const vel = gestureVel.current;
+      vel.x = vel.x * 0.85 + e.movementX;
+      vel.y = vel.y * 0.85 + e.movementY;
+      if (Math.abs(vel.x) > 50 && Math.abs(vel.x) > Math.abs(vel.y) * 1.5) {
+        setScrollMode('horizontal');
+        vel.x = 0; vel.y = 0;
+      } else if (Math.abs(vel.y) > 50 && Math.abs(vel.y) > Math.abs(vel.x) * 1.5) {
+        setScrollMode('vertical');
+        vel.x = 0; vel.y = 0;
+      }
+    };
+    document.addEventListener('mousemove', handleMove);
+    return () => document.removeEventListener('mousemove', handleMove);
+  }, [anyExpanded, setScrollMode]);
 
   return (
     <LayoutGroup>
@@ -851,7 +963,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     <div
       ref={controlRef}
       data-exclude-pin
-      className="flex fixed z-40 flex-col items-center"
+      className="flex fixed z-40 flex-col items-center gap-0"
       style={{
         left: buttonPos ? buttonPos.x - 30 : 0,
         top: buttonPos ? buttonPos.y : 0,
@@ -862,7 +974,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       {/* 핀 — 데스크탑 전용 */}
       <button
         onClick={() => setPinned(p => !p)}
-        className="hidden md:flex p-1"
+        className="hidden md:flex p-0 mb-2"
         style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))', opacity: pinned ? 1 : 0.4 }}
         aria-label="위치 고정"
       >
@@ -871,22 +983,30 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       {/* 뷰 전환 — 데스크탑 전용 */}
       <button
         onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-        className="hidden md:flex p-1"
+        className="hidden md:flex p-0"
         style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
         aria-label="뷰 전환"
       >
         {viewMode === 'list' ? <Grid2X2 size={20} /> : <List size={20} />}
       </button>
-      {/* 스크롤 방향 토글 — 데스크탑 + 확장시만 노출 */}
+      {/* 오토 포커스 토글 */}
       <button
-        onMouseEnter={() => setScrollMode(scrollMode === 'horizontal' ? 'vertical' : 'horizontal')}
-        className={`hidden md:flex transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => {
+          if (autoFocus) {
+            setAutoFocus(false);
+            setExpandedIds(new Set());
+            try { sessionStorage.removeItem(storageKey) } catch {}
+          } else {
+            setAutoFocus(true);
+          }
+        }}
+        className="hidden md:flex p-0"
         style={{ color: 'white', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.7))' }}
-        aria-label="스크롤 방향 전환"
+        aria-label="오토 포커스 토글"
       >
-        <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
+        {autoFocus ? <ArrowsInIcon /> : <ArrowsOutIcon />}
       </button>
-      {/* 전체 닫기 — 데스크탑 + 확장시만 노출 */}
+      {/* 전체 닫기 */}
       <button
         onClick={() => { setExpandedIds(new Set()); try { sessionStorage.removeItem(storageKey) } catch {} }}
         className={`hidden md:flex p-1 transition-opacity duration-300 ${anyExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -896,6 +1016,22 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
         <RotateCcw size={20} />
       </button>
     </div>
+
+    {/* 커스텀 커서 — 확장 중에만 표시 */}
+    {anyExpanded && mousePos && (
+      <div
+        className="fixed pointer-events-none z-50"
+        style={{
+          left: mousePos.x,
+          top: mousePos.y,
+          transform: 'translate(-50%, -50%)',
+          color: 'white',
+          filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))',
+        }}
+      >
+        <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
+      </div>
+    )}
     </LayoutGroup>
   );
 };

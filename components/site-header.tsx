@@ -128,16 +128,39 @@ export function SiteHeader({ brandButton, slideContent, dropdownItems }: SiteHea
             </div>
           </div>
 
-          {/* 오른쪽 — 모바일 전용 뷰 토글 */}
-          {isHome && (
-            <button
-              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-              className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="뷰 전환"
-            >
-              {viewMode === 'list' ? <Grid2X2 size={18} /> : <List size={18} />}
-            </button>
-          )}
+          {/* 오른쪽 */}
+          <div className="flex items-center gap-3">
+            {/* 언어 토글 */}
+            <div className="flex items-center gap-1 leading-none">
+              <button
+                onClick={() => setLanguage("ko")}
+                className={cn("text-[10px] font-medium text-foreground transition-opacity",
+                  language === "ko" ? "opacity-100" : "opacity-40 hover:opacity-70"
+                )}
+              >
+                KOR
+              </button>
+              <span className="text-foreground opacity-40 text-[10px]">/</span>
+              <button
+                onClick={() => setLanguage("en")}
+                className={cn("text-[10px] font-medium text-foreground transition-opacity",
+                  language === "en" ? "opacity-100" : "opacity-40 hover:opacity-70"
+                )}
+              >
+                ENG
+              </button>
+            </div>
+            {/* 모바일 전용 뷰 토글 */}
+            {isHome && (
+              <button
+                onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="뷰 전환"
+              >
+                {viewMode === 'list' ? <Grid2X2 size={18} /> : <List size={18} />}
+              </button>
+            )}
+          </div>
         </div>
 
       </header>
@@ -178,25 +201,6 @@ export function SiteHeader({ brandButton, slideContent, dropdownItems }: SiteHea
               </Link>
             </>
           )}
-          <div className="flex items-center gap-1 pt-1 pb-0 border-t border-border leading-none">
-            <button
-              onClick={() => { setLanguage("ko"); setBrandOpen(false) }}
-              className={cn("text-[9px] font-medium text-foreground transition-opacity",
-                language === "ko" ? "opacity-100" : "opacity-40 hover:opacity-70"
-              )}
-            >
-              KOR
-            </button>
-            <span className="text-foreground opacity-40 text-[9px]">/</span>
-            <button
-              onClick={() => { setLanguage("en"); setBrandOpen(false) }}
-              className={cn("text-[9px] font-medium text-foreground transition-opacity",
-                language === "en" ? "opacity-100" : "opacity-40 hover:opacity-70"
-              )}
-            >
-              ENG
-            </button>
-          </div>
         </div>
         </div>
         </div>
