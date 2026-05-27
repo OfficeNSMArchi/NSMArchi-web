@@ -511,6 +511,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
             fill
             sizes="(max-width: 768px) 70vw, 30vw"
             className="object-cover"
+            quality={90}
             draggable={false}
             priority
             unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH] blob URL 지원
@@ -586,7 +587,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
                       />
                     ) : (
                       <>
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={85} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={90} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                         {staticCaption && (staticCaption.ko || staticCaption.en) && (
                           <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
                             <p className="text-white leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
@@ -606,7 +607,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
             <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
               isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`} style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
-              <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={85} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+              <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={90} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
             </div>
           ))
         )}
@@ -928,7 +929,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                       className="relative flex-1 h-full overflow-hidden group bg-gray-100 p-0 border-0"
                     >
                       {firstProject.image ? (
-                        <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized={firstProject.image?.startsWith('blob:')} />
+                        <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={firstProject.image?.startsWith('blob:')} />
                       ) : (
                         <div className="absolute inset-0 bg-gray-100" />
                       )}
@@ -950,7 +951,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                       >
                         {project.image ? (
-                          <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized={project.image?.startsWith('blob:')} />
+                          <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={project.image?.startsWith('blob:')} />
                         ) : (
                           <div className="absolute inset-0 bg-gray-100" />
                         )}
