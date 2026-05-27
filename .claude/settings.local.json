@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(del \"C:\\\\my-lab-site\\\\fix_share.py\")"
+      "Bash(del \"C:\\\\my-lab-site\\\\fix_share.py\")",
+      "Bash(Get-ChildItem C:\\\\NSMArchi-web -Depth 1)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Sort-Object PSIsContainer -Descending)"
     ]
   }
 }
