@@ -26,7 +26,7 @@ export interface Project {
       | { type: "map"; address?: string; lat?: number; lng?: number; zoom?: number; mapType?: "roadmap" | "satellite" | "hybrid"; }
     >;
     companies: Array<"ndb" | "snp" | "metalogic">;
-    metalogicCategory?: "practice" | "research" | "solution" | "essay" | "education" | "roots";
+    metalogicCategory?: "contribution" | "practice" | "research" | "education";
     ndbCategory?: "project" | "research";
     snpCategory?: "project" | "research";
     visibleOn?: string[];

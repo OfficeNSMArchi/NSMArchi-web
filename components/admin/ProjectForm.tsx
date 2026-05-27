@@ -943,12 +943,10 @@ export default function ProjectForm() {
                   <Field label="Metalogic 카테고리">
                     <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
                       <option value="">— 미설정 —</option>
+                      <option value="contribution">Contribution</option>
                       <option value="practice">Practice</option>
-                      <option value="research">Logic / Research</option>
-                      <option value="solution">Logic / Solutions</option>
-                      <option value="essay">Insight / Essay</option>
-                      <option value="education">Insight / Education</option>
-                      <option value="roots">Insight / Roots</option>
+                      <option value="research">Research</option>
+                      <option value="education">Education</option>
                     </select>
                   </Field>
                 )}

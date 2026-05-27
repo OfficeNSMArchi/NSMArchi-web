@@ -14,9 +14,9 @@ import { NsmHomeCorner } from "@/components/nsm-home-corner"
 
 const metalogicCategories: { key: MetalogicCategoryKey; label: string }[] = [
   { key: "practice", label: "PRACTICE" },
-  { key: "concept", label: "CONCEPT" },
+  { key: "contribution", label: "CONTRIBUTION" },
   { key: "research", label: "RESEARCH" },
-  { key: "academic", label: "ACADEMIC" },
+  { key: "education", label: "EDUCATION" },
 ]
 
 export function MetalogicHeader() {

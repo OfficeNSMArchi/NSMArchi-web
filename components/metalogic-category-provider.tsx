@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 import type { UseTypeKey } from "@/lib/useTypeSchema"
 
-export type MetalogicCategoryKey = "all" | "practice" | "research" | "solution" | "essay" | "education" | "roots"
+export type MetalogicCategoryKey = "all" | "contribution" | "practice" | "research" | "education"
 
 const MetalogicCategoryContext = createContext<{
   selectedCategory: MetalogicCategoryKey

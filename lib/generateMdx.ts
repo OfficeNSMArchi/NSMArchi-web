@@ -36,7 +36,7 @@ export interface ProjectFormData {
   area: string;
   useType: import("./useTypeSchema").UseTypeKey;
   companies: Array<"ndb" | "snp" | "metalogic">;
-  metalogicCategory: "practice" | "research" | "solution" | "essay" | "education" | "roots" | "";
+  metalogicCategory: "contribution" | "practice" | "research" | "education" | "";
   ndbCategory: "project" | "research" | "";
   snpCategory: "project" | "research" | "";
   visibleOn: string[];
