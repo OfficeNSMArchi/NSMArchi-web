@@ -623,7 +623,8 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
 
 // [ADMIN-PREVIEW-PATCH] defaultExpandedId prop 추가 — 어드민 전체 미리보기 오버레이용
 // 업데이트 시 이 prop과 아래 useEffect 분기, 그리고 각 Image의 unoptimized 조건을 수동으로 다시 추가할 것
-export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', defaultExpandedId }: { projects: Project[], storageKey?: string, defaultExpandedId?: string }) => {
+interface GridSection { label: string; projects: Project[] }
+export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', defaultExpandedId, gridSections }: { projects: Project[], storageKey?: string, defaultExpandedId?: string, gridSections?: GridSection[] }) => {
   // 서버/클라 hydration 일치 위해 빈 상태로 시작, 마운트 후 sessionStorage 동기화
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -840,6 +841,31 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     return () => document.removeEventListener('click', handler);
   }, [pinned]);
 
+  // 헤더 아래 섹션 라벨: 화면 중앙에 가장 가까운 프로젝트의 섹션명 추적
+  const [centerLabel, setCenterLabel] = useState('');
+  useEffect(() => {
+    if (!gridSections) { setCenterLabel(''); return; }
+    const labelMap: Record<string, string> = Object.fromEntries(
+      gridSections.flatMap(({ label, projects: sps }) => sps.map(p => [p.id, label]))
+    );
+    const update = () => {
+      const centerY = window.innerHeight / 2;
+      let closestId: string | null = null;
+      let closestDist = Infinity;
+      projects.forEach(p => {
+        const el = document.getElementById(`project-${p.id}`);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const dist = Math.abs(rect.top + rect.height / 2 - centerY);
+        if (dist < closestDist) { closestDist = dist; closestId = p.id; }
+      });
+      if (closestId) setCenterLabel(labelMap[closestId] ?? '');
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, [gridSections, projects, displayMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 확장 중 커스텀 커서 + 마우스 방향으로 스크롤 모드 전환
   useEffect(() => {
     if (!anyExpanded) {
@@ -880,35 +906,97 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
             />
           ))
         ) : (
-          <div className={`w-full grid grid-cols-2 lg:grid-cols-3 gap-2 pb-[100px] animate-in fade-in duration-500 ${LAYOUT_MAX_W} ${LAYOUT_PX}`}>
-            {projects.map((project) => {
-              const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
-              return (
-                <motion.button
-                  key={project.id}
-                  id={`project-${project.id}`}
-                  layoutId={project.id}
-                  transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
-                  onClick={() => handleGridClick(project.id)}
-                  className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
-                >
-                  <Image
-                    src={project.image}
-                    alt={title}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
-                  />
-                  {/* 타이틀 — 좌측 하단 고정 */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
-                    <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
-                  </div>
-                  {/* 호버 시 살짝 밝아지는 오버레이 */}
-                  <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
-                </motion.button>
-              );
-            })}
+          <div className={`w-full grid grid-cols-2 lg:grid-cols-3 gap-2 pb-2 animate-in fade-in duration-500 ${LAYOUT_MAX_W} ${LAYOUT_PX}`}>
+            {gridSections ? (
+              gridSections.flatMap(({ label, projects: sectionProjects }) => {
+                if (sectionProjects.length === 0) return [];
+                const [firstProject, ...restProjects] = sectionProjects;
+                const firstTitle = language === 'ko' ? firstProject.titleKo : (firstProject.title || firstProject.titleKo);
+                return [
+                  /* Section start cell: narrow label column (5%) + first project (95%) */
+                  <div key={`section-${label}`} className="relative w-full aspect-[4/3] flex">
+                    <div className="w-[5%] h-full flex items-start justify-center pt-1">
+                      <span className="text-[9px] font-semibold tracking-[0.15em] text-foreground [writing-mode:vertical-rl] rotate-180 whitespace-pre">
+                        {"   "}+{"   "}{label}
+                      </span>
+                    </div>
+                    <motion.button
+                      layoutId={firstProject.id}
+                      id={`project-${firstProject.id}`}
+                      transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
+                      onClick={() => handleGridClick(firstProject.id)}
+                      className="relative flex-1 h-full overflow-hidden group bg-gray-100 p-0 border-0"
+                    >
+                      {firstProject.image ? (
+                        <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized={firstProject.image?.startsWith('blob:')} />
+                      ) : (
+                        <div className="absolute inset-0 bg-gray-100" />
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
+                        <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{firstTitle}</p>
+                      </div>
+                      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
+                    </motion.button>
+                  </div>,
+                  ...restProjects.map(project => {
+                    const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
+                    return (
+                      <motion.button
+                        key={project.id}
+                        id={`project-${project.id}`}
+                        layoutId={project.id}
+                        transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
+                        onClick={() => handleGridClick(project.id)}
+                        className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
+                      >
+                        {project.image ? (
+                          <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized={project.image?.startsWith('blob:')} />
+                        ) : (
+                          <div className="absolute inset-0 bg-gray-100" />
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
+                          <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
+                        </div>
+                        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
+                      </motion.button>
+                    );
+                  }),
+                ];
+              })
+            ) : (
+              projects.map((project) => {
+                const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
+                return (
+                  <motion.button
+                    key={project.id}
+                    id={`project-${project.id}`}
+                    layoutId={project.id}
+                    transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
+                    onClick={() => handleGridClick(project.id)}
+                    className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
+                  >
+                    {project.image ? (
+                      <Image
+                        src={project.image}
+                        alt={title}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gray-100" />
+                    )}
+                    {/* 타이틀 — 좌측 하단 고정 */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
+                      <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
+                    </div>
+                    {/* 호버 시 살짝 밝아지는 오버레이 */}
+                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
+                  </motion.button>
+                );
+              })
+            )}
           </div>
         )}
       </div>
@@ -954,6 +1042,19 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
         <RotateCcw size={20} />
       </button>
     </div>
+
+    {/* 현재 섹션 표시 — 헤더 바로 아래, 리스트 뷰 + gridSections 있을 때 */}
+    {gridSections && displayMode === 'list' && (
+      <div
+        data-exclude-pin
+        className={`fixed left-0 right-0 z-30 pointer-events-none flex items-center ${LAYOUT_PX}`}
+        style={{ top: 'var(--header-h, 48px)', paddingTop: '0.4rem' }}
+      >
+        <span className="text-[9px] font-semibold tracking-[0.15em] text-muted-foreground uppercase whitespace-pre transition-opacity duration-300" style={{ opacity: centerLabel ? 1 : 0 }}>
+          {"   "}+{"   "}{centerLabel}
+        </span>
+      </div>
+    )}
 
     {/* 커스텀 커서 — 확장 중에만 표시 */}
     {anyExpanded && mousePos && (

@@ -944,9 +944,10 @@ export default function ProjectForm() {
                     <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
                       <option value="">— 미설정 —</option>
                       <option value="contribution">Contribution</option>
-                      <option value="practice">Practice</option>
+                      <option value="initiative">Initiative</option>
                       <option value="research">Research</option>
                       <option value="education">Education</option>
+                      <option value="essay">Essay</option>
                     </select>
                   </Field>
                 )}
