@@ -242,6 +242,8 @@ export default function ProjectForm() {
   const [loadKey, setLoadKey] = useState(0);
   const [newImage, setNewImage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  // 서버에 올라간 적 있는 이미지 인덱스의 최솟값 — 삭제 후에도 같은 파일명 재사용 방지
+  const serverImgIdxFloor = useRef(0);
   const [previewBlobUrls, setPreviewBlobUrls] = useState<Map<string, string>>(new Map());
   const [galleryBlobUrls, setGalleryBlobUrls] = useState<Map<string, string>>(new Map());
   const [fullBlobUrls, setFullBlobUrls] = useState<Map<string, string>>(new Map());
@@ -358,6 +360,20 @@ export default function ProjectForm() {
       setLoadMode(false);
       setPasteText("");
       setLoadError("");
+
+      // 서버에서 로드된 이미지 인덱스의 floor 계산 — 이후 새 파일 업로드 시 재사용 방지
+      const allServerNames = [
+        parsed.coverImage ?? "",
+        ...(parsed.images ?? []),
+        ...(parsed.content ?? []).filter((b: any) => b.type === "image" && b.src).map((b: any) => b.src as string),
+      ];
+      let floor = 0;
+      for (const name of allServerNames) {
+        const filename = (name ?? "").split("/").pop() ?? "";
+        const m = filename.match(/^image-(\d+)\./);
+        if (m) floor = Math.max(floor, parseInt(m[1]));
+      }
+      serverImgIdxFloor.current = floor;
     } catch {
       setLoadError("MDX 파싱 실패. 올바른 형식인지 확인해주세요.");
     }
@@ -474,16 +490,19 @@ export default function ProjectForm() {
   function handleImageFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).filter((f) => isImageFile(f.name));
     if (files.length === 0) return;
-    // 업로드된 파일 + content 블록 참조 이름 전체에서 image-NNN 최대값 계산
-    // → 이미 fetch 실패한 프로젝트 이미지와 충돌 방지
+    // 업로드된 파일 + content 블록 + data.images 참조 이름에서 image-NNN 최대값 계산
+    // → 서버에 있는 파일명과 충돌 방지 (경로 포함된 경우 파일명만 추출)
     const allExistingNames = [
       data.coverImage,
+      ...data.images,
       ...data.content.filter(b => b.type === "image" && b.src).map(b => b.src!),
     ];
     setUploadedFiles((prev) => {
-      let maxIdx = 0;
+      // serverImgIdxFloor: 로드된 프로젝트의 최대 인덱스 — 삭제 후에도 재사용 방지
+      let maxIdx = serverImgIdxFloor.current;
       for (const name of [...prev.map(f => f.name), ...allExistingNames]) {
-        const m = (name ?? "").match(/^image-(\d+)\./);
+        const filename = (name ?? "").split("/").pop() ?? "";
+        const m = filename.match(/^image-(\d+)\./);
         if (m) maxIdx = Math.max(maxIdx, parseInt(m[1]));
       }
       const startIdx = maxIdx + 1;

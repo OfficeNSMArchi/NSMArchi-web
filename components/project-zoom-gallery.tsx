@@ -508,7 +508,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
             src={project.image}
             alt={title}
             fill
-            sizes="(max-width: 768px) 70vw, 30vw"
+            sizes="(max-width: 767px) 70vw, 35vw"
             className="object-cover"
             quality={90}
             draggable={false}
