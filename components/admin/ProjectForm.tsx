@@ -90,6 +90,7 @@ function isImageFile(name: string) {
 
 
 type PublishStatus = "idle" | "publishing" | "success" | "error";
+type DeployState = "pending" | "success" | "failure" | "unknown";
 
 function resizeToBlob(src: string, maxPx: number, quality: number): Promise<string> {
   return new Promise((resolve) => {
@@ -120,7 +121,10 @@ export default function ProjectForm() {
   const [isNarrow, setIsNarrow] = useState(false);
   const [publishStatus, setPublishStatus] = useState<PublishStatus>("idle");
   const [publishError, setPublishError] = useState("");
-  const [countdown, setCountdown] = useState(0);
+  const [deployState, setDeployState] = useState<DeployState>("pending");
+  const [deployUrl, setDeployUrl] = useState<string | null>(null);
+  const commitShaRef = useRef<string | null>(null);
+  const deployPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetch("/api/save-local").then(r => r.json()).then(j => setGitAvailable(j.available)).catch(() => setGitAvailable(false));
@@ -133,11 +137,41 @@ export default function ProjectForm() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  // Poll deploy status after publishing
   useEffect(() => {
-    if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown((n) => n - 1), 1000);
-    return () => clearTimeout(t);
-  }, [countdown]);
+    return () => {
+      if (deployPollRef.current) clearInterval(deployPollRef.current);
+    };
+  }, []);
+
+  function startDeployPolling(sha: string) {
+    commitShaRef.current = sha;
+    setDeployState("pending");
+    setDeployUrl(null);
+
+    if (deployPollRef.current) clearInterval(deployPollRef.current);
+
+    async function checkStatus() {
+      try {
+        const res = await fetch(`/api/deploy-status?commitSha=${sha}`);
+        const json = await res.json();
+        if (json.vercel?.targetUrl) setDeployUrl(json.vercel.targetUrl);
+        if (json.state === "success") {
+          setDeployState("success");
+          if (deployPollRef.current) clearInterval(deployPollRef.current);
+        } else if (json.state === "failure") {
+          setDeployState("failure");
+          if (deployPollRef.current) clearInterval(deployPollRef.current);
+        }
+        // "pending" → keep polling
+      } catch {
+        // network error — keep polling
+      }
+    }
+
+    checkStatus();
+    deployPollRef.current = setInterval(checkStatus, 5000);
+  }
 
   useEffect(() => {
     function loadProjects() {
@@ -562,8 +596,9 @@ export default function ProjectForm() {
         throw new Error(message);
       }
 
+      const json = await res.json();
       setPublishStatus("success");
-      setCountdown(90);
+      if (json.commitSha) startDeployPolling(json.commitSha);
     } catch (e: any) {
       setPublishStatus("error");
       setPublishError(e.message || "알 수 없는 오류");
@@ -1187,12 +1222,21 @@ export default function ProjectForm() {
             <h2 className="text-base font-semibold text-gray-900">GitHub에 등록되었습니다</h2>
             <p className="text-sm text-gray-500">Vercel이 자동으로 빌드를 시작했습니다.</p>
 
-            {countdown > 0 ? (
-              <div className="text-sm text-gray-400">
-                약 <span className="font-mono font-semibold text-gray-700">{countdown}초</span> 후 홈페이지에 반영됩니다
+            {/* Deploy status */}
+            {deployState === "pending" && (
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                빌드 중… 자동으로 상태를 확인하고 있습니다
               </div>
-            ) : (
-              <p className="text-sm text-green-600 font-medium">빌드가 완료되었을 수 있습니다.</p>
+            )}
+            {deployState === "success" && (
+              <p className="text-sm text-green-600 font-medium">🎉 배포 완료! 홈페이지에 반영되었습니다.</p>
+            )}
+            {deployState === "failure" && (
+              <p className="text-sm text-red-500 font-medium">⚠ 빌드 실패. Vercel 대시보드를 확인해주세요.</p>
             )}
 
             <div className="flex flex-col gap-2 pt-1">
@@ -1202,19 +1246,23 @@ export default function ProjectForm() {
                 rel="noopener noreferrer"
                 className="block w-full px-4 py-2.5 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
-                홈페이지 확인하기 {countdown > 0 && <span className="text-gray-400 text-xs">(빌드 전일 수 있음)</span>}
+                홈페이지 확인하기
+                {deployState === "pending" && <span className="text-gray-400 text-xs ml-1">(빌드 중)</span>}
               </a>
               <a
-                href="https://vercel.com/dashboard"
+                href={deployUrl ?? "https://vercel.com/dashboard"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
               >
-                Vercel 대시보드 확인
+                Vercel 배포 확인
               </a>
               <button
                 type="button"
-                onClick={() => setPublishStatus("idle")}
+                onClick={() => {
+                  setPublishStatus("idle");
+                  if (deployPollRef.current) clearInterval(deployPollRef.current);
+                }}
                 className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 mt-1"
               >
                 계속 편집
