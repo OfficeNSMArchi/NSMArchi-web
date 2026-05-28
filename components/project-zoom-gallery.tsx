@@ -292,12 +292,10 @@ interface ProjectRowProps {
   project: Project;
   isExpanded: boolean;
   onToggle: (x: number, y: number) => void;
-  layoutId: string;
   scrollMode: 'horizontal' | 'vertical';
-  instantExpand?: boolean; // 그리드→리스트 전환시 확장 애니메이션 없이 바로 펼쳐진 상태로 표시
 }
 
-const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, instantExpand = false }: ProjectRowProps) => {
+const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowProps) => {
   const { language } = useLanguage();
   const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -389,7 +387,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, insta
       */}
       <div
         ref={scrollRef}
-        className={`flex items-stretch gap-[2px] md:gap-1 ${instantExpand ? '' : 'transition-all ease-[cubic-bezier(0.4,0,0.2,1)]'} ${
+        className={`flex items-stretch gap-[2px] md:gap-1 transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isExpanded
             ? 'overflow-x-auto hide-scrollbar cursor-pointer'
             : keepOpen
@@ -397,7 +395,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, insta
               : 'overflow-hidden w-full'
         }`}
         style={{
-          transitionDuration: instantExpand ? '0ms' : `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms`,
+          transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms`,
           ...(isExpanded ? { width: '100vw' } : {}),
         }}
         onPointerDown={handlePointerDown}
@@ -496,9 +494,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, insta
         </div>
 
         {/* Anchor Image (Cover Photo: 70% on mobile, 50% on desktop) */}
-        <motion.div
-          layoutId={instantExpand ? undefined : layoutId}
-          transition={instantExpand ? {} : { layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
+        <div
           className={`shrink-0 relative aspect-[4/3] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded
               ? 'shadow-xl'
@@ -541,7 +537,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, insta
               )}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Right Content: description always first, then content blocks (or fallback images) */}
 
@@ -650,7 +646,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | null>(null);
-  const [instantExpandId, setInstantExpandId] = useState<string | null>(null);
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
 
@@ -752,7 +747,8 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
 
   const handleGridClick = (id: string) => {
     setFading(true);
-    setInstantExpandId(id); // 페이드 시작과 동시에 세팅
+    // 줌 즉시 적용 (페이드 중이라 안 보임)
+    if (wrapperRef.current) wrapperRef.current.style.zoom = String(DESKTOP_ZOOM_IN);
     window.history.pushState(null, '', `/projects/${id}`);
     setTimeout(() => {
       setViewMode('list');
@@ -760,8 +756,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       setExpandedIds(prev => new Set(prev).add(id));
       setScrollTarget(id);
       setFading(false);
-      // 페이드인 완료 후 정상 모드 복귀 (이후 닫기/열기엔 애니메이션 적용)
-      setTimeout(() => setInstantExpandId(null), 400);
     }, 300);
   };
 
@@ -792,11 +786,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     const target = anyExpanded ? DESKTOP_ZOOM_IN : 1;
     const from = parseFloat((el.style.zoom as string) || '1') || 1;
     if (from === target) return;
-    // 그리드→리스트 전환 중엔 줌도 즉시 적용 (페이드 뒤에 이미 완료된 상태로 표시)
-    if (instantExpandId) {
-      el.style.zoom = String(target);
-      return;
-    }
     const duration = anyExpanded ? EXPAND_DURATION : COLLAPSE_DURATION;
     const startTime = performance.now();
     let rafId: number;
@@ -808,7 +797,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     };
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [anyExpanded, instantExpandId]);
+  }, [anyExpanded]);
 
   // 언마운트 시에만 zoom 초기화
   useEffect(() => {
@@ -886,7 +875,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   }, [anyExpanded, setScrollMode]);
 
   return (
-    <LayoutGroup>
+    <>
     <div ref={wrapperRef} className="w-full relative flex flex-col items-center">
 <div className="w-full flex flex-col items-center pb-[20px]" style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}>
         {displayMode === 'list' ? (
@@ -896,9 +885,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
               project={project}
               isExpanded={expandedIds.has(project.id)}
               onToggle={(x, y) => handleToggle(project.id, x, y)}
-              layoutId={project.id}
               scrollMode={scrollMode}
-              instantExpand={instantExpandId === project.id}
             />
           ))
         ) : (
@@ -916,10 +903,8 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         {"   "}+{"   "}{label}
                       </span>
                     </div>
-                    <motion.button
-                      layoutId={firstProject.id}
+                    <button
                       id={`project-${firstProject.id}`}
-                      transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
                       onClick={() => handleGridClick(firstProject.id)}
                       className="relative flex-1 h-full overflow-hidden group bg-gray-100 p-0 border-0"
                     >
@@ -932,16 +917,14 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{firstTitle}</p>
                       </div>
                       <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
-                    </motion.button>
+                    </button>
                   </div>,
                   ...restProjects.map(project => {
                     const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
                     return (
-                      <motion.button
+                      <button
                         key={project.id}
                         id={`project-${project.id}`}
-                        layoutId={project.id}
-                        transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
                         onClick={() => handleGridClick(project.id)}
                         className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                       >
@@ -954,7 +937,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                           <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
                         </div>
                         <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
-                      </motion.button>
+                      </button>
                     );
                   }),
                 ];
@@ -963,11 +946,9 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
               projects.map((project) => {
                 const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
                 return (
-                  <motion.button
+                  <button
                     key={project.id}
                     id={`project-${project.id}`}
-                    layoutId={project.id}
-                    transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
                     onClick={() => handleGridClick(project.id)}
                     className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                   >
@@ -989,7 +970,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                     </div>
                     {/* 호버 시 살짝 밝아지는 오버레이 */}
                     <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300 pointer-events-none" />
-                  </motion.button>
+                  </button>
                 );
               })
             )}
@@ -1067,6 +1048,6 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
         <ScrollWheelIcon vertical={scrollMode === 'vertical'} />
       </div>
     )}
-    </LayoutGroup>
+    </>
   );
 };
