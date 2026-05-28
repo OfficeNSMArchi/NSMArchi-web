@@ -6,6 +6,7 @@ import GoogleMap from "@/components/GoogleMap";
 import { ContentBlock } from "@/lib/generateMdx";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
+  useDroppable, useDraggable,
 } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -139,24 +140,43 @@ function getBadges(seq: SeqItem[]): Map<string, string> {
 // ── Fixed Cover Card (non-draggable) ─────────────────────────────
 
 function FixedCoverCard({ blobUrl, onUnset }: { blobUrl?: string; onUnset: () => void }) {
+  // 커버 슬롯 — 시퀀스 이미지를 드래그해서 놓으면 커버로 설정
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: '__cover__' });
+  // 커버 이미지 — 드래그해서 시퀀스로 옮기면 커버 해제
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+    id: '__cover_item__',
+    disabled: !blobUrl,
+  });
+
   return (
-    <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-orange-400 flex-shrink-0">
-      {blobUrl
-        ? <img src={blobUrl} alt="cover" className="w-full h-full object-cover pointer-events-none" />
-        : (
-          // 커버 없을 때 로고 플레이스홀더
-          <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center gap-1">
-            <img src="/branding/nsm-mark.svg" alt="no cover" className="w-10 h-10 opacity-20" />
-            <span className="text-[9px] text-gray-300">커버 없음</span>
-          </div>
-        )
-      }
-      {/* 커버 있을 때만 해제 버튼 표시 — 파일은 삭제하지 않고 시퀀스로 복귀 */}
+    <div
+      ref={setDropRef}
+      className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors ${
+        isOver ? 'border-orange-500 scale-105' : 'border-orange-400'
+      } ${isDragging ? 'opacity-40' : ''}`}
+    >
+      {blobUrl ? (
+        /* 커버 이미지 — 드래그 가능 */
+        <div
+          ref={setDragRef} {...attributes} {...listeners}
+          className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+          title="드래그하여 시퀀스로 이동 (커버 해제)"
+        >
+          <img src={blobUrl} alt="cover" className="w-full h-full object-cover pointer-events-none" />
+        </div>
+      ) : (
+        /* 커버 없음 — 로고 플레이스홀더 */
+        <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center gap-1 pointer-events-none">
+          <img src="/branding/nsm-mark.svg" alt="no cover" className="w-10 h-10 opacity-20" />
+          <span className={`text-[9px] ${isOver ? 'text-orange-500 font-medium' : 'text-gray-300'}`}>
+            {isOver ? '여기에 놓기' : '커버 없음'}
+          </span>
+        </div>
+      )}
+      {/* ✕ — 커버 해제 (파일은 시퀀스로 복귀) */}
       {blobUrl && (
-        <button type="button"
-          onClick={onUnset}
-          title="커버 해제 (파일은 유지됩니다)"
-          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-orange-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer"
+        <button type="button" onClick={onUnset} title="커버 해제"
+          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-orange-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto"
         >✕</button>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center justify-end pointer-events-none">
@@ -348,35 +368,45 @@ export default function ImageSequencer({
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+
+    // 시퀀스 이미지 → 커버 슬롯으로 드롭
+    if (over?.id === '__cover__' && active.id !== '__cover_item__') {
+      const item = sequence.find((i) => i.id === active.id && i.kind === "image") as SeqImage | undefined;
+      if (!item) return;
+      // 기존 커버가 있으면 시퀀스 맨 앞으로 복귀
+      if (coverImage) {
+        const restoredCover: SeqImage = {
+          id: uid(), kind: "image", filename: coverImage,
+          checked: false, captionKo: "", captionEn: "", showCaption: true,
+          expanded: false, slides: [], slideInterval: 3, slideCaptions: [],
+        };
+        setSequence((s) => [restoredCover, ...s.filter((i) => i.id !== active.id)]);
+      } else {
+        setSequence((s) => s.filter((i) => i.id !== active.id));
+      }
+      setCoverImage(item.filename);
+      return;
+    }
+
+    // 커버 이미지 → 시퀀스로 드래그 (커버 해제)
+    if (active.id === '__cover_item__') {
+      unsetCover();
+      return;
+    }
+
+    // 시퀀스 내 순서 변경
     if (!over || active.id === over.id) return;
     setSequence((s) => {
       const oldIdx = s.findIndex((i) => i.id === active.id);
       const newIdx = s.findIndex((i) => i.id === over.id);
+      if (oldIdx === -1 || newIdx === -1) return s;
       return arrayMove(s, oldIdx, newIdx);
     });
   }
 
   function toggleCheck(id: string) {
-    const item = sequence.find((i) => i.id === id && i.kind === "image") as SeqImage | undefined;
-    if (!item) return;
-
-    if (!item.checked && !coverImage) {
-      // 커버 없음 → 이 이미지를 커버로 (시퀀스에서 제거, 커버 슬롯으로)
-      setCoverImage(item.filename);
-      setSequence((s) => s.filter((i) => i.id !== id));
-    } else if (!item.checked && coverImage) {
-      // 커버 있음 → 기존 커버를 시퀀스 맨 앞 unchecked로 복귀하고, 이 이미지를 커버로
-      const restoredCover: SeqImage = {
-        id: uid(), kind: "image", filename: coverImage,
-        checked: false, captionKo: "", captionEn: "", showCaption: true,
-        expanded: false, slides: [], slideInterval: 3, slideCaptions: [],
-      };
-      setCoverImage(item.filename);
-      setSequence((s) => [restoredCover, ...s.filter((i) => i.id !== id)]);
-    } else {
-      // 이미 포함된 이미지 → checked 토글 (콘텐츠 포함/제외)
-      setSequence((s) => s.map((i) => i.id === id && i.kind === "image" ? { ...i, checked: !i.checked } : i));
-    }
+    // 클릭 = 콘텐츠 포함/제외 토글만. 커버 설정은 드래그로 처리.
+    setSequence((s) => s.map((i) => i.id === id && i.kind === "image" ? { ...i, checked: !i.checked } : i));
   }
 
   function unsetCover() {
@@ -577,7 +607,9 @@ export default function ImageSequencer({
         커버·설명은 고정 위치. 이미지가 없을 때 첫 체크한 이미지가 자동으로 커버가 됩니다.
       </p>
 
-      {/* Fixed row: Cover + Description (always visible, non-draggable) */}
+      {/* Fixed row: Cover + Description (always visible) */}
+      {/* DndContext가 커버 슬롯과 시퀀스를 모두 감쌈 — 커버↔시퀀스 드래그 지원 */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex gap-2 items-start flex-wrap">
         <FixedCoverCard blobUrl={coverBlobUrl} onUnset={unsetCover} />
         <FixedDescCard expanded={descExpanded} onToggle={toggleDesc} />
@@ -586,8 +618,7 @@ export default function ImageSequencer({
         <div className="w-px self-stretch bg-gray-200 mx-1" />
 
         {/* Draggable sequence */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sequence.map((i) => i.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={sequence.map((i) => i.id)} strategy={rectSortingStrategy}>
             <div className="flex flex-wrap gap-2 min-h-[6rem] flex-1">
               {sequence.length === 0 && (
                 <div className="flex items-center justify-center text-sm text-gray-400 py-4 px-2">
@@ -626,8 +657,8 @@ export default function ImageSequencer({
               })}
             </div>
           </SortableContext>
-        </DndContext>
       </div>
+      </DndContext>
 
       {/* Inline editor — description */}
       {descExpanded && (
