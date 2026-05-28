@@ -139,7 +139,7 @@ function getBadges(seq: SeqItem[]): Map<string, string> {
 
 // ── Fixed Cover Card (non-draggable) ─────────────────────────────
 
-function FixedCoverCard({ blobUrl, onUnset }: { blobUrl?: string; onUnset: () => void }) {
+function FixedCoverCard({ blobUrl, onUnset, onRemove }: { blobUrl?: string; onUnset: () => void; onRemove: () => void }) {
   // 커버 슬롯 — 시퀀스 이미지를 드래그해서 놓으면 커버로 설정
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: '__cover__' });
   // 커버 이미지 — 드래그해서 시퀀스로 옮기면 커버 해제
@@ -173,10 +173,10 @@ function FixedCoverCard({ blobUrl, onUnset }: { blobUrl?: string; onUnset: () =>
           </span>
         </div>
       )}
-      {/* ✕ — 커버 해제 (파일은 시퀀스로 복귀) */}
+      {/* ✕ — 커버 이미지 삭제 */}
       {blobUrl && (
-        <button type="button" onClick={onUnset} title="커버 해제"
-          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-orange-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto"
+        <button type="button" onClick={onRemove} title="커버 이미지 삭제"
+          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer touch-auto"
         >✕</button>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center justify-end pointer-events-none">
@@ -411,13 +411,20 @@ export default function ImageSequencer({
 
   function unsetCover() {
     if (!coverImage) return;
-    // 파일은 유지하고 커버만 해제 — 시퀀스 맨 앞에 unchecked 상태로 복귀
+    // 파일은 유지하고 커버만 해제 — 시퀀스 맨 앞에 unchecked 상태로 복귀 (드래그 전용)
     const restored: SeqImage = {
       id: uid(), kind: "image", filename: coverImage,
       checked: false, captionKo: "", captionEn: "", showCaption: true,
       expanded: false, slides: [], slideInterval: 3, slideCaptions: [],
     };
     setSequence((s) => [restored, ...s]);
+    setCoverImage("");
+  }
+
+  function removeCover() {
+    if (!coverImage) return;
+    // ✕ 클릭 = 파일 삭제
+    onRemoveFile(coverImage);
     setCoverImage("");
   }
 
@@ -604,14 +611,14 @@ export default function ImageSequencer({
         클릭으로 콘텐츠 포함/제외 (파란 테두리 = 웹에 표시). 드래그로 순서 변경.
       </p>
       <p className="text-[11px] text-gray-400 -mt-1">
-        커버 설정: 이미지를 커버 슬롯으로 드래그. 해제: 커버 이미지를 시퀀스로 드래그하거나 ✕ 클릭.
+        커버 설정: 이미지를 커버 슬롯으로 드래그. 해제(시퀀스 복귀): 커버를 시퀀스 쪽으로 드래그. 삭제: ✕ 클릭.
       </p>
 
       {/* Fixed row: Cover + Description (always visible) */}
       {/* DndContext가 커버 슬롯과 시퀀스를 모두 감쌈 — 커버↔시퀀스 드래그 지원 */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex gap-2 items-start flex-wrap">
-        <FixedCoverCard blobUrl={coverBlobUrl} onUnset={unsetCover} />
+        <FixedCoverCard blobUrl={coverBlobUrl} onUnset={unsetCover} onRemove={removeCover} />
         <FixedDescCard expanded={descExpanded} onToggle={toggleDesc} />
 
         {/* Separator */}
