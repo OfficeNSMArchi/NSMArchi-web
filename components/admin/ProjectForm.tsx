@@ -72,7 +72,6 @@ function validateForm(data: ProjectFormData): string[] {
   if (!data.locationKo) errors.push("위치 (한국어)");
   if (!data.client) errors.push("클라이언트 (영어)");
   if (!data.clientKo) errors.push("클라이언트 (한국어)");
-  if (!data.coverImage) errors.push("커버 이미지");
   if (data.companies.length === 0) errors.push("소속 회사 (1개 이상)");
   if (!data.description) errors.push("설명 (영어)");
   if (!data.descriptionKo) errors.push("설명 (한국어)");

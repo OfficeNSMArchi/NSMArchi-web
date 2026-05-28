@@ -13,6 +13,19 @@ import { STAGES, getStageLabel, type StageType } from '@/lib/stageSchema';
 import { List, Grid2X2, Pin, RotateCcw } from 'lucide-react';
 import GoogleMap from '@/components/GoogleMap';
 
+function NoCoverPlaceholder({ companies }: { companies?: string[] }) {
+  const logo =
+    companies?.includes('metalogic') ? '/branding/meta-logic-v.svg' :
+    companies?.includes('ndb')       ? '/branding/ndb-v.svg' :
+    companies?.includes('snp')       ? '/branding/snp-v.svg' :
+                                       '/branding/nsm-mark.svg';
+  return (
+    <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+      <img src={logo} alt="no cover" className="w-1/3 max-w-[80px] opacity-20 object-contain" draggable={false} />
+    </div>
+  );
+}
+
 const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <g style={{ transformOrigin: '32px 32px', transform: vertical ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)' }}>
@@ -516,7 +529,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
             unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH] blob URL 지원
           />
           ) : (
-            <div className="absolute inset-0 bg-gray-100" />
+            <NoCoverPlaceholder companies={project.companies} />
           )}
           {/* 브랜드 로고 오버레이 — 확장시만 표시 */}
           {project.companies?.some(c => ['ndb', 'snp', 'metalogic'].includes(c)) && (
@@ -911,7 +924,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                       {firstProject.image ? (
                         <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={firstProject.image?.startsWith('blob:')} />
                       ) : (
-                        <div className="absolute inset-0 bg-gray-100" />
+                        <NoCoverPlaceholder companies={firstProject.companies} />
                       )}
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
                         <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{firstTitle}</p>
@@ -931,7 +944,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         {project.image ? (
                           <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={project.image?.startsWith('blob:')} />
                         ) : (
-                          <div className="absolute inset-0 bg-gray-100" />
+                          <NoCoverPlaceholder companies={project.companies} />
                         )}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 px-3 pointer-events-none flex items-end justify-start">
                           <p className="text-white text-xs font-normal tracking-[0.15em] uppercase leading-tight text-left">{title}</p>
@@ -959,6 +972,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        quality={90}
                         unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
                       />
                     ) : (
