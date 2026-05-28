@@ -427,6 +427,8 @@ export default function ProjectForm() {
       const formData = new FormData();
       formData.append("projectId", data.id);
       formData.append("mdxContent", mdx);
+      // 현재 uploadedFiles 목록을 keepFiles로 전송 → API가 목록 외 이미지를 디스크에서 삭제
+      formData.append("keepFiles", JSON.stringify(uploadedFiles.map((f) => f.name)));
       for (const file of uploadedFiles) {
         formData.append(`image:${file.name}`, file);
       }
@@ -1004,7 +1006,11 @@ export default function ProjectForm() {
                 onCoverChange={(name) => set("coverImage", name)}
                 onContentChange={(blocks) => set("content", blocks)}
                 onDescriptionChange={(ko, en) => setData((prev) => ({ ...prev, descriptionKo: ko, description: en }))}
-                onRemoveFile={(name) => setUploadedFiles((prev) => prev.filter((f) => f.name !== name))}
+                onRemoveFile={(name) => {
+                  setUploadedFiles((prev) => prev.filter((f) => f.name !== name));
+                  // data.images에서도 제거해야 MDX에 포함되지 않고, 다음 loadFromId 때 재로드되지 않음
+                  setData((prev) => ({ ...prev, images: prev.images.filter((img) => img !== name) }));
+                }}
               />
             </div>
           </section>

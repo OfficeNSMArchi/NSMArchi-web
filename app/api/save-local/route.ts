@@ -33,6 +33,12 @@ export async function POST(req: NextRequest) {
 
   const dir = path.join(PROJECT_ROOT, "public", "projects", projectId);
 
+  // 이번 저장에 포함될 파일 이름 목록 (클라이언트가 보내준 keepFiles)
+  const keepFilesStr = formData.get("keepFiles");
+  const keepFiles = keepFilesStr
+    ? new Set<string>(JSON.parse(keepFilesStr as string))
+    : null;
+
   try {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, `${projectId}.mdx`), mdxContent, "utf-8");
@@ -43,6 +49,21 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(await value.arrayBuffer());
         await fs.writeFile(path.join(dir, filename), buffer);
       }
+    }
+
+    // keepFiles 목록이 있으면, 디렉터리의 기존 이미지 중 목록에 없는 것 삭제
+    if (keepFiles) {
+      const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "gif", "svg"]);
+      const existing = await fs.readdir(dir);
+      await Promise.all(
+        existing.map(async (file) => {
+          if (file === `${projectId}.mdx`) return; // MDX는 절대 삭제 안 함
+          const ext = file.split(".").pop()?.toLowerCase() ?? "";
+          if (IMAGE_EXTS.has(ext) && !keepFiles.has(file)) {
+            await fs.unlink(path.join(dir, file));
+          }
+        })
+      );
     }
   } catch (e: any) {
     return NextResponse.json({ error: `파일 저장 실패: ${e.message}` }, { status: 500 });
