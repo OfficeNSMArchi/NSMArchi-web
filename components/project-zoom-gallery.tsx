@@ -35,6 +35,10 @@ const ScrollWheelIcon = ({ vertical = false }: { vertical?: boolean }) => (
   </svg>
 );
 
+// ── 이미지 퀄리티 — 여기 한 곳만 수정하면 갤러리 전체 적용 ──────────
+const IMAGE_QUALITY = 90; // Next.js Image quality (1–100), default 75
+// ──────────────────────────────────────────────────────────────────
+
 const EXPAND_DURATION = 1500; // ms — 열기 애니메이션 속도
 const COLLAPSE_DURATION = 1000; // ms — 닫기 애니메이션 속도
 const DESKTOP_ZOOM_IN = 1.1; // 데스크탑에서 프로젝트 열릴 때 적용할 줌 배율
@@ -196,6 +200,8 @@ function SlideshowImage({ srcs, interval, alt, isExpanded, firstCaption, caption
         <Image key={src} src={src} alt={alt} fill
           className="object-cover transition-opacity duration-700"
           style={{ opacity: i === current ? 1 : 0 }}
+          sizes="(max-width: 767px) 70vw, 35vw"
+          quality={IMAGE_QUALITY}
           unoptimized={src.startsWith('blob:')}
           draggable={false}
           priority={i === 0}
@@ -523,7 +529,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
             fill
             sizes="(max-width: 767px) 70vw, 35vw"
             className="object-cover"
-            quality={90}
+            quality={IMAGE_QUALITY}
             draggable={false}
             priority
             unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH] blob URL 지원
@@ -608,7 +614,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
                       />
                     ) : (
                       <>
-                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={90} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+                        <Image src={block.src} alt={block.alt || "Detail"} fill className="object-cover" quality={IMAGE_QUALITY} unoptimized={block.src?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
                         {staticCaption && (staticCaption.ko || staticCaption.en) && (
                           <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-2 pointer-events-none" style={{ containerType: 'inline-size' }}>
                             <p className="text-white leading-relaxed font-light whitespace-pre-wrap" style={{ fontSize: 'clamp(0.3rem, 2cqw, 9pt)' }}>
@@ -628,7 +634,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
             <div key={i} className={`shrink-0 aspect-[4/3] relative shadow-lg bg-gray-100 transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
               isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`} style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}>
-              <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={90} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
+              <Image src={img} alt={`${title} ${i}`} fill className="object-contain md:object-cover" quality={IMAGE_QUALITY} unoptimized={img?.startsWith('blob:')} /* [ADMIN-PREVIEW-PATCH] */ />
             </div>
           ))
         )}
@@ -935,7 +941,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                       className="relative flex-1 h-full overflow-hidden group bg-gray-100 p-0 border-0"
                     >
                       {(firstProject.image && !firstProject.hidden) ? (
-                        <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={firstProject.image?.startsWith('blob:')} />
+                        <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={IMAGE_QUALITY} unoptimized={firstProject.image?.startsWith('blob:')} />
                       ) : (
                         <NoCoverPlaceholder companies={firstProject.companies} />
                       )}
@@ -955,7 +961,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                       >
                         {(project.image && !project.hidden) ? (
-                          <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={project.image?.startsWith('blob:')} />
+                          <Image src={project.image} alt={title} fill sizes="(max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={IMAGE_QUALITY} unoptimized={project.image?.startsWith('blob:')} />
                         ) : (
                           <NoCoverPlaceholder companies={project.companies} />
                         )}
@@ -983,9 +989,9 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         src={project.image}
                         alt={title}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        quality={90}
+                        quality={IMAGE_QUALITY}
                         unoptimized={project.image?.startsWith('blob:')} // [ADMIN-PREVIEW-PATCH]
                       />
                     ) : (

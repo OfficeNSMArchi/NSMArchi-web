@@ -1,35 +1,21 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { SiteHeader } from "@/components/site-header"
 import { useMetalogicCategory, type MetalogicCategoryKey } from "@/components/metalogic-category-provider"
-import { USE_TYPES, type UseTypeKey } from "@/lib/useTypeSchema"
-
-const CATEGORY_ITEMS: { key: MetalogicCategoryKey; label: string }[] = [
-  { key: "initiative",     label: "INITIATIVE" },
-  { key: "contribution", label: "CONTRIBUTION" },
-  { key: "research",     label: "RESEARCH" },
-  { key: "education",    label: "EDUCATION" },
-  { key: "essay",        label: "ESSAY" },
-]
+import { METALOGIC_CATEGORIES } from "@/lib/metalogicCategorySchema"
 
 export function MetalogicSiteHeader() {
-  const { selectedCategory, setSelectedCategory, selectedUseType, setSelectedUseType } = useMetalogicCategory()
-  const [initiativeOpen, setPracticeOpen] = useState(false)
+  const { selectedCategory, setSelectedCategory } = useMetalogicCategory()
+  const router = useRouter()
+  const pathname = usePathname()
 
   function selectCategory(key: MetalogicCategoryKey) {
     setSelectedCategory(key)
-    setSelectedUseType("")
+    if (pathname !== "/metalogic") router.push("/metalogic")
   }
-
-  function selectUseType(useType: UseTypeKey) {
-    setSelectedCategory("initiative")
-    setSelectedUseType(useType)
-  }
-
-  const isPracticeActive = selectedCategory === "initiative"
 
   return (
     <SiteHeader
@@ -59,39 +45,8 @@ export function MetalogicSiteHeader() {
             ALL
           </button>
 
-          {/* PRACTICE + fly-out */}
-          <div
-            className="relative"
-            onMouseEnter={() => setPracticeOpen(true)}
-            onMouseLeave={() => setPracticeOpen(false)}
-          >
-            <button
-              onClick={() => { selectCategory("initiative"); onClose() }}
-              className={cn("text-[10px] font-medium text-foreground transition-opacity",
-                isPracticeActive ? "opacity-100" : "opacity-40 hover:opacity-70"
-              )}
-            >
-              PRACTICE {isPracticeActive && selectedUseType ? `/ ${selectedUseType.toUpperCase()}` : ""}
-            </button>
-            {initiativeOpen && (
-              <div className="absolute left-full top-0 ml-3 flex flex-col gap-1 bg-background/20 backdrop-blur-md pl-2 pr-3 py-1 border-l border-border">
-                {USE_TYPES.map((t) => (
-                  <button
-                    key={t.key}
-                    onClick={() => { selectUseType(t.key); onClose() }}
-                    className={cn("text-[10px] font-medium text-foreground whitespace-nowrap transition-opacity",
-                      isPracticeActive && selectedUseType === t.key ? "opacity-100" : "opacity-40 hover:opacity-70"
-                    )}
-                  >
-                    {t.en.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* CONTRIBUTION / RESEARCH / EDUCATION */}
-          {CATEGORY_ITEMS.filter(i => i.key !== "initiative").map((item) => (
+          {/* CONTRIBUTION / RESEARCH / EDUCATION (initiative 포함 전체) */}
+          {METALOGIC_CATEGORIES.map((item) => (
             <button
               key={item.key}
               onClick={() => { selectCategory(item.key); onClose() }}

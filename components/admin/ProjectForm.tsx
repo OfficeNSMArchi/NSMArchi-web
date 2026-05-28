@@ -15,6 +15,7 @@ import ImageSequencer from "./ImageSequencer";
 import MdxPreview from "./MdxPreview";
 import { useSession, signIn, signOut } from "next-auth/react";
 import imageCompression from "browser-image-compression";
+import { METALOGIC_CATEGORIES } from "@/lib/metalogicCategorySchema";
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -980,11 +981,9 @@ export default function ProjectForm() {
                   <Field label="Metalogic 카테고리">
                     <select value={data.metalogicCategory} onChange={(e) => set("metalogicCategory", e.target.value as ProjectFormData["metalogicCategory"])} className={selectCls}>
                       <option value="">— 미설정 —</option>
-                      <option value="contribution">Contribution</option>
-                      <option value="initiative">Initiative</option>
-                      <option value="research">Research</option>
-                      <option value="education">Education</option>
-                      <option value="essay">Essay</option>
+                      {METALOGIC_CATEGORIES.map(({ key, label }) => (
+                        <option key={key} value={key}>{label.charAt(0) + label.slice(1).toLowerCase()}</option>
+                      ))}
                     </select>
                   </Field>
                 )}

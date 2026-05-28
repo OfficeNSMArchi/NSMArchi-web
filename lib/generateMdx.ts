@@ -1,3 +1,5 @@
+import type { MetalogicCategorySlug } from "./metalogicCategorySchema";
+
 export interface ContentBlock {
   type: "image" | "text" | "map";
   // image
@@ -36,7 +38,7 @@ export interface ProjectFormData {
   area: string;
   useType: import("./useTypeSchema").UseTypeKey;
   companies: Array<"ndb" | "snp" | "metalogic">;
-  metalogicCategory: "initiative" | "contribution" | "research" | "education" | "essay" | "";
+  metalogicCategory: MetalogicCategorySlug | "";
   ndbCategory: "project" | "research" | "";
   snpCategory: "project" | "research" | "";
   visibleOn: string[];

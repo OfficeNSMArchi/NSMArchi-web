@@ -1,24 +1,21 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
-import type { UseTypeKey } from "@/lib/useTypeSchema"
+import type { MetalogicCategoryKey } from "@/lib/metalogicCategorySchema"
 
-export type MetalogicCategoryKey = "all" | "initiative" | "contribution" | "research" | "education" | "essay"
+export type { MetalogicCategoryKey }
 
 const MetalogicCategoryContext = createContext<{
   selectedCategory: MetalogicCategoryKey
   setSelectedCategory: (key: MetalogicCategoryKey) => void
-  selectedUseType: UseTypeKey
-  setSelectedUseType: (key: UseTypeKey) => void
 } | null>(null)
 
 export function MetalogicCategoryProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<MetalogicCategoryKey>("all")
-  const [selectedUseType, setSelectedUseType] = useState<UseTypeKey>("")
 
   return (
     <MetalogicCategoryContext.Provider
-      value={{ selectedCategory, setSelectedCategory, selectedUseType, setSelectedUseType }}
+      value={{ selectedCategory, setSelectedCategory }}
     >
       {children}
     </MetalogicCategoryContext.Provider>
