@@ -674,13 +674,12 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   };
 
 
-  // 페이드 중 순간이동 — 렌더 완료 후 실행되므로 DOM 보장
+  // 페이드 중 순간이동 — 렌더 완료 후 실행되므로 DOM 보장 (list/grid 공용)
   useEffect(() => {
-    if (!scrollTarget || displayMode !== 'list') return;
+    if (!scrollTarget) return;
     const el = document.getElementById(`project-${scrollTarget}`);
     if (!el) return;
-    const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
-    window.scrollTo(0, targetY);
+    el.scrollIntoView({ block: 'center' });
     setScrollTarget(null);
   }, [scrollTarget, displayMode]);
 
@@ -700,26 +699,12 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       savedExpandedIds.current = expandedIds;
       setFading(true);
       setTimeout(() => {
+        // 줌도 페이드 중에 즉시 초기화 (보이지 않는 동안 처리)
+        if (wrapperRef.current) wrapperRef.current.style.zoom = '1';
         setExpandedIds(new Set());
-        setDisplayMode(mode);
+        setDisplayMode('grid');
+        if (closestId) setScrollTarget(closestId);
         setFading(false);
-        setTimeout(() => {
-          if (!closestId) return;
-          const el = document.getElementById(`project-${closestId}`);
-          if (!el) return;
-          const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
-          const startY = window.scrollY;
-          const diff = targetY - startY;
-          const duration = 1500;
-          const startTime = performance.now();
-          const step = (now: number) => {
-            const t = Math.min((now - startTime) / duration, 1);
-            const ease = 1 - Math.pow(1 - t, 3);
-            window.scrollTo(0, startY + diff * ease);
-            if (t < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
-        }, 300);
       }, 300);
     } else {
       setFading(true);
