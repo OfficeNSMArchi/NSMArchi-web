@@ -35,6 +35,7 @@ interface ExistingProject {
   id: string;
   title: string;
   titleKo: string;
+  hidden?: boolean;
 }
 
 interface SchemaField {
@@ -112,6 +113,11 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
           {existingProjects.length > 0 && (
             <span className="ml-1.5 text-xs text-gray-400">{existingProjects.length}</span>
           )}
+          {existingProjects.some((p) => p.hidden) && (
+            <span className="ml-1 px-1.5 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-600 rounded leading-tight">
+              숨김 {existingProjects.filter((p) => p.hidden).length}
+            </span>
+          )}
         </button>
         <button
           type="button"
@@ -142,7 +148,12 @@ export default function MdxPreview({ mdx, projectId, errors = [], existingProjec
               <div key={p.id} className="relative px-3 py-2 rounded-lg hover:bg-gray-50 group flex items-center justify-between">
                 <div className="min-w-0">
                   <p className="text-xs text-gray-300 font-mono">{p.id}</p>
-                  <p className="text-sm text-gray-800">{p.title}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm text-gray-800">{p.title}</p>
+                    {p.hidden && (
+                      <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-medium bg-amber-100 text-amber-600 rounded leading-tight">숨김 중</span>
+                    )}
+                  </div>
                   {p.titleKo && <p className="text-xs text-gray-500">{p.titleKo}</p>}
                 </div>
                 <div className="relative shrink-0 ml-2">

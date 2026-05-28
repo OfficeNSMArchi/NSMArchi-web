@@ -516,7 +516,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
           style={{ ...PHOTO_STYLE, transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms` }}
           onClick={handleCoverClick}
         >
-          {project.image ? (
+          {(project.image && !project.hidden) ? (
            <Image
             src={project.image}
             alt={title}
@@ -554,6 +554,15 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
 
         {/* Right Content: description always first, then content blocks (or fallback images) */}
 
+        {project.hidden ? (
+          /* Hidden project — "준비 중" placeholder only */
+          <TextBlock
+            block={{ type: 'text', body: { ko: '준비 중입니다.', en: 'Coming Soon.' } }}
+            language={language}
+            isExpanded={isExpanded}
+          />
+        ) : (
+        <>
         {/* Description — reuses TextBlock for consistent sizing, font, overflow */}
         <TextBlock
           block={{ type: 'text', body: { ko: project.descriptionKo, en: project.description || project.descriptionKo } }}
@@ -624,6 +633,10 @@ const ProjectRow = ({ project, isExpanded, onToggle, scrollMode }: ProjectRowPro
           ))
         )}
         
+        {/* End of hidden-else block */}
+        </>
+        )}
+
         {/* Spacer at the end for comfortable scrolling */}
            <div className={`shrink-0 h-full transition-opacity ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -921,7 +934,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                       onClick={() => handleGridClick(firstProject.id)}
                       className="relative flex-1 h-full overflow-hidden group bg-gray-100 p-0 border-0"
                     >
-                      {firstProject.image ? (
+                      {(firstProject.image && !firstProject.hidden) ? (
                         <Image src={firstProject.image} alt={firstTitle} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={firstProject.image?.startsWith('blob:')} />
                       ) : (
                         <NoCoverPlaceholder companies={firstProject.companies} />
@@ -941,7 +954,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                         onClick={() => handleGridClick(project.id)}
                         className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                       >
-                        {project.image ? (
+                        {(project.image && !project.hidden) ? (
                           <Image src={project.image} alt={title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" quality={90} unoptimized={project.image?.startsWith('blob:')} />
                         ) : (
                           <NoCoverPlaceholder companies={project.companies} />
@@ -965,7 +978,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
                     onClick={() => handleGridClick(project.id)}
                     className="relative w-full aspect-[4/3] overflow-hidden group bg-gray-100 p-0 border-0"
                   >
-                    {project.image ? (
+                    {(project.image && !project.hidden) ? (
                       <Image
                         src={project.image}
                         alt={title}

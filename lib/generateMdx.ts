@@ -46,6 +46,7 @@ export interface ProjectFormData {
   descriptionKo: string;
   content: ContentBlock[];
   extraFields: Record<string, string>;
+  hidden?: boolean;
 }
 
 export const defaultFormData: ProjectFormData = {
@@ -72,6 +73,7 @@ export const defaultFormData: ProjectFormData = {
   descriptionKo: "",
   content: [],
   extraFields: {},
+  hidden: undefined,
 };
 
 export const REQUIRED_FORM_FIELDS = new Set([
@@ -140,6 +142,7 @@ export function generateMdx(data: ProjectFormData): string {
     lines.push(`visibleOn: [${data.visibleOn.join(", ")}]`)
   }
 
+  if (data.hidden) lines.push(`hidden: true`);
   lines.push(`coverImage: ${data.coverImage || '""'}`);
 
   if (data.images.filter(Boolean).length > 0) {

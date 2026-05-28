@@ -15,9 +15,9 @@ export async function GET() {
         try {
           const raw = fs.readFileSync(mdxPath, "utf-8");
           const { data } = matter(raw);
-          return { id, title: data.title ?? id, titleKo: data.titleKo ?? "" };
+          return { id, title: data.title ?? id, titleKo: data.titleKo ?? "", hidden: data.hidden === true };
         } catch {
-          return { id, title: id, titleKo: "" };
+          return { id, title: id, titleKo: "", hidden: false };
         }
       })
       .sort((a, b) => a.id.localeCompare(b.id));

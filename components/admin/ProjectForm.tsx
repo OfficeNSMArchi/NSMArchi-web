@@ -111,7 +111,7 @@ export default function ProjectForm() {
   const [data, setData] = useState<ProjectFormData>(defaultFormData);
   const [idSlug, setIdSlug] = useState("");
   const [slugSync, setSlugSync] = useState(false);
-  const [existingProjects, setExistingProjects] = useState<{id: string; title: string; titleKo: string}[]>([]);
+  const [existingProjects, setExistingProjects] = useState<{id: string; title: string; titleKo: string; hidden?: boolean}[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [projectsRefreshIn, setProjectsRefreshIn] = useState(30);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
@@ -350,10 +350,12 @@ export default function ProjectForm() {
       const { slug } = splitId(parsed.id);
       setIdSlug(slug);
       setSlugSync(false);
-      if (images && images.length > 0) {
-        parsed.images = images.map((f) => f.name);
-        setUploadedFiles(images);
+      // 새 프로젝트 로드 시 항상 이미지 교체 — 이전 프로젝트 이미지 잔류 방지
+      const newFiles = (images && images.length > 0) ? images : [];
+      if (newFiles.length > 0) {
+        parsed.images = newFiles.map((f) => f.name);
       }
+      setUploadedFiles(newFiles);
       setData(parsed);
       setLoadKey((k) => k + 1);
       setLoadMode(false);
@@ -958,6 +960,21 @@ export default function ProjectForm() {
                   ))}
                 </div>
               </Field>
+              <label className="flex items-start gap-3 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={!!data.hidden}
+                  onChange={(e) => setData((prev) => ({ ...prev, hidden: e.target.checked || undefined }))}
+                  className="w-4 h-4 mt-0.5 accent-amber-500"
+                />
+                <div>
+                  <span className={`text-sm font-medium ${data.hidden ? "text-amber-600" : "text-gray-700"}`}>
+                    내용 임시 가리기
+                    {data.hidden && <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-amber-100 text-amber-700 rounded font-normal">숨김 중</span>}
+                  </span>
+                  <p className="text-[11px] text-gray-400 mt-0.5">체크 시 홈페이지에 회사 로고 플레이스홀더만 표시되고 실제 내용(이미지·설명)은 숨겨집니다. 정리 전 단계에서 자리만 차지할 때 사용.</p>
+                </div>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 {data.companies.includes("metalogic") && (
                   <Field label="Metalogic 카테고리">

@@ -58,6 +58,7 @@ export function getAllProjects(): Project[] {
         : (data.showOnNsm || data.showOnHome)
           ? [...(Array.isArray(data.companies) ? data.companies : []), "nsm"]
           : undefined,
+      hidden: data.hidden === true ? true : undefined,
       image: resolveImgPath(id, data.coverImage),
       images: (data.images ?? []).map((f: string) => resolveImgPath(id, f)),
       content: (data.content ?? []).map((block: any) =>

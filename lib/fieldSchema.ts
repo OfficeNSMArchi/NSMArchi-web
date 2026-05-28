@@ -4,4 +4,5 @@ export const KNOWN_FIELDS = new Set([
   "useType",
   "metalogicCategory", "ndbCategory", "snpCategory", "showOnNsm", "showOnHome", "visibleOn", "featured", "coverImage", "images",
   "description", "descriptionKo", "content",
+  "hidden",
 ]);

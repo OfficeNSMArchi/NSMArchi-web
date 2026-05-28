@@ -70,6 +70,7 @@ export function parseMdx(mdxString: string): ProjectFormData {
     metalogicCategory: data.metalogicCategory ?? "",
     ndbCategory: data.ndbCategory ?? "",
     snpCategory: data.snpCategory ?? "",
+    hidden: data.hidden === true ? true : undefined,
     coverImage: data.coverImage ?? "",
     images: Array.isArray(data.images) ? data.images : [],
     description: data.description ?? "",

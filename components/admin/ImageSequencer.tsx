@@ -5,7 +5,8 @@ import { signIn } from "next-auth/react";
 import GoogleMap from "@/components/GoogleMap";
 import { ContentBlock } from "@/lib/generateMdx";
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  DragEndEvent, DragStartEvent, DragOverlay,
   useDroppable, useDraggable,
 } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
@@ -315,6 +316,9 @@ export default function ImageSequencer({
 }: ImageSequencerProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Active drag item id (for DragOverlay ghost)
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   // Cover is a fixed slot, separate from draggable sequence
   const [coverImage, setCoverImage] = useState<string>(initialCoverImage);
   // Description expanded state, separate from draggable sequence
@@ -366,7 +370,12 @@ export default function ImageSequencer({
 
   // ── Handlers ───────────────────────────────────────────────────
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
 
     // 시퀀스 이미지 → 커버 슬롯으로 드롭
@@ -616,7 +625,7 @@ export default function ImageSequencer({
 
       {/* Fixed row: Cover + Description (always visible) */}
       {/* DndContext가 커버 슬롯과 시퀀스를 모두 감쌈 — 커버↔시퀀스 드래그 지원 */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex gap-2 items-start flex-wrap">
         <FixedCoverCard blobUrl={coverBlobUrl} onUnset={unsetCover} onRemove={removeCover} />
         <FixedDescCard expanded={descExpanded} onToggle={toggleDesc} />
@@ -665,6 +674,61 @@ export default function ImageSequencer({
             </div>
           </SortableContext>
       </div>
+
+      {/* DragOverlay — ghost card that follows cursor during drag */}
+      <DragOverlay dropAnimation={null}>
+        {activeId ? (() => {
+          // Cover image being dragged back to sequence
+          if (activeId === '__cover_item__') {
+            return coverBlobUrl ? (
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-orange-400 shadow-2xl rotate-2 opacity-90 pointer-events-none">
+                <img src={coverBlobUrl} alt="cover" className="w-full h-full object-cover" />
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center justify-end">
+                  <span className="text-[8px] bg-orange-500 text-white px-1 rounded leading-4">커버</span>
+                </div>
+              </div>
+            ) : null;
+          }
+          // Sequence item being dragged
+          const item = sequence.find((i) => i.id === activeId);
+          if (!item) return null;
+          if (item.kind === "image") {
+            const url = blobUrls.get(item.filename);
+            const badge = badges.get(item.id) ?? "";
+            return (
+              <div className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 shadow-2xl rotate-2 opacity-90 pointer-events-none ${item.checked ? "border-blue-500" : "border-gray-300"}`}>
+                {url
+                  ? <img src={url} alt={item.filename} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300 text-xs">…</div>
+                }
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center gap-1">
+                  <p className="text-white text-[9px] truncate flex-1">{item.filename}</p>
+                  {badge && <span className="text-[8px] bg-blue-500 text-white px-1 rounded shrink-0 leading-4">{badge}</span>}
+                </div>
+              </div>
+            );
+          }
+          if (item.kind === "text") {
+            const badge = badges.get(item.id) ?? "";
+            return (
+              <div className="relative w-24 h-24 rounded-lg border-2 border-blue-400 bg-blue-50 shadow-2xl rotate-2 opacity-90 pointer-events-none flex flex-col items-center justify-center gap-0.5">
+                <span className="text-xl">📝</span>
+                <span className="text-[10px] text-blue-600 font-medium">{badge}</span>
+              </div>
+            );
+          }
+          if (item.kind === "map") {
+            const badge = badges.get(item.id) ?? "";
+            return (
+              <div className="relative w-24 h-24 rounded-lg border-2 border-green-400 bg-green-50 shadow-2xl rotate-2 opacity-90 pointer-events-none flex flex-col items-center justify-center gap-0.5">
+                <span className="text-xl">🗺</span>
+                <span className="text-[10px] text-green-600 font-medium">{badge}</span>
+              </div>
+            );
+          }
+          return null;
+        })() : null}
+      </DragOverlay>
       </DndContext>
 
       {/* Inline editor — description */}

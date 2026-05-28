@@ -37,6 +37,7 @@ export function formToProject(data: ProjectFormData, blobUrls: Map<string, strin
     ndbCategory: data.ndbCategory || undefined,
     snpCategory: data.snpCategory || undefined,
     visibleOn: data.visibleOn,
+    hidden: data.hidden || undefined,
     image: resolve(data.coverImage),
     images: data.images.map(resolve),
     content: data.content.map((block) => {
