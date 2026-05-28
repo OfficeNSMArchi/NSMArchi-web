@@ -294,9 +294,10 @@ interface ProjectRowProps {
   onToggle: (x: number, y: number) => void;
   layoutId: string;
   scrollMode: 'horizontal' | 'vertical';
+  instantExpand?: boolean; // 그리드→리스트 전환시 확장 애니메이션 없이 바로 펼쳐진 상태로 표시
 }
 
-const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: ProjectRowProps) => {
+const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode, instantExpand = false }: ProjectRowProps) => {
   const { language } = useLanguage();
   const title = language === 'ko' ? project.titleKo : (project.title || project.titleKo);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -388,7 +389,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
       */}
       <div
         ref={scrollRef}
-        className={`flex items-stretch gap-[2px] md:gap-1 transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`flex items-stretch gap-[2px] md:gap-1 ${instantExpand ? '' : 'transition-all ease-[cubic-bezier(0.4,0,0.2,1)]'} ${
           isExpanded
             ? 'overflow-x-auto hide-scrollbar cursor-pointer'
             : keepOpen
@@ -396,7 +397,7 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
               : 'overflow-hidden w-full'
         }`}
         style={{
-          transitionDuration: `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms`,
+          transitionDuration: instantExpand ? '0ms' : `${isExpanded ? EXPAND_DURATION : COLLAPSE_DURATION}ms`,
           ...(isExpanded ? { width: '100vw' } : {}),
         }}
         onPointerDown={handlePointerDown}
@@ -496,8 +497,8 @@ const ProjectRow = ({ project, isExpanded, onToggle, layoutId, scrollMode }: Pro
 
         {/* Anchor Image (Cover Photo: 70% on mobile, 50% on desktop) */}
         <motion.div
-          layoutId={layoutId}
-          transition={{ layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
+          layoutId={instantExpand ? undefined : layoutId}
+          transition={instantExpand ? {} : { layout: { duration: 0.6, ease: [0.4, 0, 0.2, 1] } }}
           className={`shrink-0 relative aspect-[4/3] transition-all ease-[cubic-bezier(0.4,0,0.2,1)] ${
             isExpanded
               ? 'shadow-xl'
@@ -649,6 +650,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | null>(null);
+  const [instantExpandId, setInstantExpandId] = useState<string | null>(null);
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
 
@@ -765,6 +767,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
 
   const handleGridClick = (id: string) => {
     setFading(true);
+    setInstantExpandId(id); // 페이드 시작과 동시에 세팅
     window.history.pushState(null, '', `/projects/${id}`);
     setTimeout(() => {
       setViewMode('list');
@@ -772,6 +775,8 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       setExpandedIds(prev => new Set(prev).add(id));
       setScrollTarget(id);
       setFading(false);
+      // 페이드인 완료 후 정상 모드 복귀 (이후 닫기/열기엔 애니메이션 적용)
+      setTimeout(() => setInstantExpandId(null), 400);
     }, 300);
   };
 
@@ -903,6 +908,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
               onToggle={(x, y) => handleToggle(project.id, x, y)}
               layoutId={project.id}
               scrollMode={scrollMode}
+              instantExpand={instantExpandId === project.id}
             />
           ))
         ) : (
