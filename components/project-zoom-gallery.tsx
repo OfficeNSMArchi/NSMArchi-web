@@ -4,6 +4,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { motion, LayoutGroup } from 'framer-motion';
 import { Project } from '@/types/project';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/lib/language-context';
 import { LAYOUT_MAX_W, LAYOUT_PX } from '@/lib/layout';
 import { useViewMode } from '@/lib/view-mode-context';
@@ -25,7 +26,6 @@ const EXPAND_DURATION = 1500; // ms — 열기 애니메이션 속도
 const COLLAPSE_DURATION = 1000; // ms — 닫기 애니메이션 속도
 const DESKTOP_ZOOM_IN = 1.1; // 데스크탑에서 프로젝트 열릴 때 적용할 줌 배율
 const SCROLL_BACK_DURATION = 2500; // ms — 닫을 때 커버사진 복귀 속도
-const GRID_TO_LIST_SCROLL_DURATION = 2500; // ms — 그리드→리스트 전환 후 해당 프로젝트로 스크롤 속도
 const TEXT_PADDING = 'px-3 md:px-8'; // 텍스트 슬라이드 안쪽 여백 (상하 제거)
 
 // 레이아웃 비율 — globals.css의 --photo-w, --margin-w 와 단일 소스로 연동
@@ -275,10 +275,12 @@ function TextBlock({ block, language, isExpanded }: {
             </h3>
           )}
           {block.body && (
-            <p className="text-gray-600 leading-relaxed whitespace-pre-wrap font-light"
+            <div className="text-gray-600 leading-relaxed font-light prose-sm [&_strong]:font-semibold [&_strong]:text-gray-800 [&_em]:italic [&_p]:mb-2 [&_p:last-child]:mb-0"
                style={{ fontSize: FONT_BLOCK_BODY }}>
-              {language === 'ko' ? block.body.ko : block.body.en}
-            </p>
+              <ReactMarkdown>
+                {language === 'ko' ? block.body.ko : block.body.en}
+              </ReactMarkdown>
+            </div>
           )}
         </div>
       </div>
@@ -646,6 +648,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
   const { viewMode, setViewMode, scrollMode, setScrollMode } = useViewMode();
   const [displayMode, setDisplayMode] = useState<'list' | 'grid'>('list');
   const [fading, setFading] = useState(false);
+  const [scrollTarget, setScrollTarget] = useState<string | null>(null);
   const savedExpandedIds = useRef<Set<string>>(new Set());
   const { language } = useLanguage();
 
@@ -668,6 +671,16 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     }, delay);
   };
 
+
+  // 페이드 중 순간이동 — 렌더 완료 후 실행되므로 DOM 보장
+  useEffect(() => {
+    if (!scrollTarget || displayMode !== 'list') return;
+    const el = document.getElementById(`project-${scrollTarget}`);
+    if (!el) return;
+    const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+    window.scrollTo(0, targetY);
+    setScrollTarget(null);
+  }, [scrollTarget, displayMode]);
 
   const switchView = useCallback((mode: 'list' | 'grid') => {
     if (mode === displayMode) return;
@@ -715,7 +728,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
           setExpandedIds(savedExpandedIds.current);
           const ids = [...savedExpandedIds.current];
           if (ids.length === 1) {
-            scrollToCenter(ids[0], GRID_TO_LIST_SCROLL_DURATION, 0);
+            setScrollTarget(ids[0]);
           }
         }, 300);
       }, 300);
@@ -757,22 +770,8 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
       setViewMode('list');
       setDisplayMode('list');
       setExpandedIds(prev => new Set(prev).add(id));
+      setScrollTarget(id);
       setFading(false);
-      setTimeout(() => {
-        const el = document.getElementById(`project-${id}`);
-        if (!el) return;
-        const targetY = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
-        const startY = window.scrollY;
-        const diff = targetY - startY;
-        const startTime = performance.now();
-        const step = (now: number) => {
-          const t = Math.min((now - startTime) / GRID_TO_LIST_SCROLL_DURATION, 1);
-          const ease = 1 - Math.pow(1 - t, 3);
-          window.scrollTo(0, startY + diff * ease);
-          if (t < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }, 100);
     }, 300);
   };
 
