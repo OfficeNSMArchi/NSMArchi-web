@@ -138,22 +138,25 @@ function getBadges(seq: SeqItem[]): Map<string, string> {
 
 // ── Fixed Cover Card (non-draggable) ─────────────────────────────
 
-function FixedCoverCard({ blobUrl, onRemove }: { blobUrl?: string; onRemove: () => void }) {
+function FixedCoverCard({ blobUrl, onUnset }: { blobUrl?: string; onUnset: () => void }) {
   return (
     <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-orange-400 flex-shrink-0">
       {blobUrl
         ? <img src={blobUrl} alt="cover" className="w-full h-full object-cover pointer-events-none" />
         : (
-          <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center gap-0.5 text-gray-300">
-            <span className="text-2xl">🖼</span>
-            <span className="text-[9px]">커버 없음</span>
+          // 커버 없을 때 로고 플레이스홀더
+          <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center gap-1">
+            <img src="/branding/nsm-mark.svg" alt="no cover" className="w-10 h-10 opacity-20" />
+            <span className="text-[9px] text-gray-300">커버 없음</span>
           </div>
         )
       }
+      {/* 커버 있을 때만 해제 버튼 표시 — 파일은 삭제하지 않고 시퀀스로 복귀 */}
       {blobUrl && (
         <button type="button"
-          onClick={onRemove}
-          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer"
+          onClick={onUnset}
+          title="커버 해제 (파일은 유지됩니다)"
+          className="absolute top-1 left-1 w-5 h-5 bg-black/60 hover:bg-orange-500 rounded-full flex items-center justify-center text-white text-[10px] transition-colors z-10 cursor-pointer"
         >✕</button>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5 flex items-center justify-end pointer-events-none">
@@ -358,19 +361,34 @@ export default function ImageSequencer({
     if (!item) return;
 
     if (!item.checked && !coverImage) {
-      // No cover yet → this image becomes cover (move out of sequence to fixed slot)
+      // 커버 없음 → 이 이미지를 커버로 (시퀀스에서 제거, 커버 슬롯으로)
       setCoverImage(item.filename);
       setSequence((s) => s.filter((i) => i.id !== id));
+    } else if (!item.checked && coverImage) {
+      // 커버 있음 → 기존 커버를 시퀀스 맨 앞 unchecked로 복귀하고, 이 이미지를 커버로
+      const restoredCover: SeqImage = {
+        id: uid(), kind: "image", filename: coverImage,
+        checked: false, captionKo: "", captionEn: "", showCaption: true,
+        expanded: false, slides: [], slideInterval: 3, slideCaptions: [],
+      };
+      setCoverImage(item.filename);
+      setSequence((s) => [restoredCover, ...s.filter((i) => i.id !== id)]);
     } else {
-      // Toggle content inclusion
+      // 이미 포함된 이미지 → checked 토글 (콘텐츠 포함/제외)
       setSequence((s) => s.map((i) => i.id === id && i.kind === "image" ? { ...i, checked: !i.checked } : i));
     }
   }
 
-  function removeCover() {
-    onRemoveFile(coverImage);
+  function unsetCover() {
+    if (!coverImage) return;
+    // 파일은 유지하고 커버만 해제 — 시퀀스 맨 앞에 unchecked 상태로 복귀
+    const restored: SeqImage = {
+      id: uid(), kind: "image", filename: coverImage,
+      checked: false, captionKo: "", captionEn: "", showCaption: true,
+      expanded: false, slides: [], slideInterval: 3, slideCaptions: [],
+    };
+    setSequence((s) => [restored, ...s]);
     setCoverImage("");
-    // Parent uploadedFiles effect will handle removing from sequence if needed
   }
 
   function toggleExpand(id: string) {
@@ -561,7 +579,7 @@ export default function ImageSequencer({
 
       {/* Fixed row: Cover + Description (always visible, non-draggable) */}
       <div className="flex gap-2 items-start flex-wrap">
-        <FixedCoverCard blobUrl={coverBlobUrl} onRemove={removeCover} />
+        <FixedCoverCard blobUrl={coverBlobUrl} onUnset={unsetCover} />
         <FixedDescCard expanded={descExpanded} onToggle={toggleDesc} />
 
         {/* Separator */}
