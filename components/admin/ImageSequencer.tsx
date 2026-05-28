@@ -601,10 +601,10 @@ export default function ImageSequencer({
   return (
     <div className="space-y-3">
       <p className="text-[11px] text-gray-400">
-        클릭으로 포함 여부 선택 (파란 테두리 = 사용 중). 드래그로 순서 변경. 저장 시 모든 사진이 서버에 업로드됩니다.
+        클릭으로 콘텐츠 포함/제외 (파란 테두리 = 웹에 표시). 드래그로 순서 변경.
       </p>
       <p className="text-[11px] text-gray-400 -mt-1">
-        커버·설명은 고정 위치. 이미지가 없을 때 첫 체크한 이미지가 자동으로 커버가 됩니다.
+        커버 설정: 이미지를 커버 슬롯으로 드래그. 해제: 커버 이미지를 시퀀스로 드래그하거나 ✕ 클릭.
       </p>
 
       {/* Fixed row: Cover + Description (always visible) */}
