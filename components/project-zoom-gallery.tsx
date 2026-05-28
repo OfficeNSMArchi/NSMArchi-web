@@ -807,6 +807,11 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     const target = anyExpanded ? DESKTOP_ZOOM_IN : 1;
     const from = parseFloat((el.style.zoom as string) || '1') || 1;
     if (from === target) return;
+    // 그리드→리스트 전환 중엔 줌도 즉시 적용 (페이드 뒤에 이미 완료된 상태로 표시)
+    if (instantExpandId) {
+      el.style.zoom = String(target);
+      return;
+    }
     const duration = anyExpanded ? EXPAND_DURATION : COLLAPSE_DURATION;
     const startTime = performance.now();
     let rafId: number;
@@ -818,7 +823,7 @@ export const ProjectZoomGallery = ({ projects, storageKey = 'gallery-expanded', 
     };
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [anyExpanded]);
+  }, [anyExpanded, instantExpandId]);
 
   // 언마운트 시에만 zoom 초기화
   useEffect(() => {
