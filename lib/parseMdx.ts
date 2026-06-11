@@ -61,7 +61,7 @@ export function parseMdx(mdxString: string): ProjectFormData {
     })(),
     client: data.client ?? "",
     clientKo: data.clientKo ?? "",
-    area: data.area ?? "-",
+    area: data.area != null ? String(data.area) : "-",
     useType: data.useType ?? "",
     companies: Array.isArray(data.companies) ? data.companies : [],
     visibleOn: Array.isArray(data.visibleOn)
